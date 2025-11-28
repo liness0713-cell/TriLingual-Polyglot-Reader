@@ -1,0 +1,5 @@
+{
+  "name": "TriLingual Polyglot Reader",
+  "description": "A comprehensive AI-powered language learning tool that generates, analyzes, and explains articles in Japanese, Chinese, and English with Ruby text support and granular grammar analysis.",
+  "requestFramePermissions": []
+}
