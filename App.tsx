@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PenTool, Library, Settings, Menu, X, Download, Trash2, PlayCircle, Search, Leaf } from 'lucide-react';
-import { Article, Difficulty, Genre, Sentence } from './types';
+import { Article, Difficulty, Genre, ArticleLength, Sentence } from './types';
 import * as GeminiService from './services/geminiService';
 import * as StorageService from './services/storageService';
 import ReactMarkdown from 'react-markdown';
@@ -90,12 +90,13 @@ const Generator = ({ onArticleGenerated }: { onArticleGenerated: (a: Article) =>
   const [topic, setTopic] = useState('');
   const [genre, setGenre] = useState<Genre>(Genre.DailyLife);
   const [difficulty, setDifficulty] = useState<Difficulty>(Difficulty.Intermediate);
+  const [length, setLength] = useState<ArticleLength>(ArticleLength.Short);
   const [loading, setLoading] = useState(false);
 
   const handleGenerate = async () => {
     setLoading(true);
     try {
-      const content = await GeminiService.generateArticleContent(topic, genre, difficulty);
+      const content = await GeminiService.generateArticleContent(topic, genre, difficulty, length);
       const newArticle: Article = {
         id: Date.now().toString(),
         createdAt: Date.now(),
@@ -128,37 +129,57 @@ const Generator = ({ onArticleGenerated }: { onArticleGenerated: (a: Article) =>
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-bold text-[#786b59] dark:text-[#a8a29e] mb-2 uppercase tracking-wide">Genre</label>
-            <div className="relative">
-                <select 
-                className="w-full px-4 py-3 rounded-xl border border-[#e6e2d3] dark:border-[#3e3b36] bg-[#faf9f6] dark:bg-[#353330] text-[#4a403a] dark:text-[#e8e6e3] outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-[#739072]"
-                value={genre}
-                onChange={(e) => setGenre(e.target.value as Genre)}
-                >
-                {Object.values(Genre).map(g => <option key={g} value={g}>{g}</option>)}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-[#8c8279]">
-                    <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path></svg>
+        <div className="grid grid-cols-1 gap-6">
+           {/* Row 1: Genre & Difficulty */}
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-[#786b59] dark:text-[#a8a29e] mb-2 uppercase tracking-wide">Genre</label>
+                <div className="relative">
+                    <select 
+                    className="w-full px-4 py-3 rounded-xl border border-[#e6e2d3] dark:border-[#3e3b36] bg-[#faf9f6] dark:bg-[#353330] text-[#4a403a] dark:text-[#e8e6e3] outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-[#739072]"
+                    value={genre}
+                    onChange={(e) => setGenre(e.target.value as Genre)}
+                    >
+                    {Object.values(Genre).map(g => <option key={g} value={g}>{g}</option>)}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-[#8c8279]">
+                        <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path></svg>
+                    </div>
                 </div>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-[#786b59] dark:text-[#a8a29e] mb-2 uppercase tracking-wide">Difficulty</label>
-            <div className="relative">
-                <select 
-                className="w-full px-4 py-3 rounded-xl border border-[#e6e2d3] dark:border-[#3e3b36] bg-[#faf9f6] dark:bg-[#353330] text-[#4a403a] dark:text-[#e8e6e3] outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-[#739072]"
-                value={difficulty}
-                onChange={(e) => setDifficulty(e.target.value as Difficulty)}
-                >
-                {Object.values(Difficulty).map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-[#8c8279]">
-                    <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path></svg>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-[#786b59] dark:text-[#a8a29e] mb-2 uppercase tracking-wide">Difficulty</label>
+                <div className="relative">
+                    <select 
+                    className="w-full px-4 py-3 rounded-xl border border-[#e6e2d3] dark:border-[#3e3b36] bg-[#faf9f6] dark:bg-[#353330] text-[#4a403a] dark:text-[#e8e6e3] outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-[#739072]"
+                    value={difficulty}
+                    onChange={(e) => setDifficulty(e.target.value as Difficulty)}
+                    >
+                    {Object.values(Difficulty).map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-[#8c8279]">
+                        <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path></svg>
+                    </div>
                 </div>
-            </div>
-          </div>
+              </div>
+           </div>
+
+           {/* Row 2: Length */}
+           <div>
+              <label className="block text-sm font-bold text-[#786b59] dark:text-[#a8a29e] mb-2 uppercase tracking-wide">Article Length</label>
+              <div className="relative">
+                  <select 
+                  className="w-full px-4 py-3 rounded-xl border border-[#e6e2d3] dark:border-[#3e3b36] bg-[#faf9f6] dark:bg-[#353330] text-[#4a403a] dark:text-[#e8e6e3] outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-[#739072]"
+                  value={length}
+                  onChange={(e) => setLength(e.target.value as ArticleLength)}
+                  >
+                  {Object.values(ArticleLength).map(l => <option key={l} value={l}>{l}</option>)}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-[#8c8279]">
+                      <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path></svg>
+                  </div>
+              </div>
+           </div>
         </div>
 
         <button

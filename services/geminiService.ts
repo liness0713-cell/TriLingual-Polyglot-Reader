@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Difficulty, Genre, Article, Sentence } from "../types";
+import { Difficulty, Genre, ArticleLength, Article, Sentence } from "../types";
 
 declare var process: {
   env: {
@@ -38,9 +38,25 @@ const articleSchema = {
 export const generateArticleContent = async (
   topic: string,
   genre: Genre,
-  difficulty: Difficulty
+  difficulty: Difficulty,
+  length: ArticleLength
 ): Promise<Omit<Article, "id" | "createdAt" | "genre" | "difficulty">> => {
   const modelId = "gemini-2.5-flash";
+
+  let lengthPrompt = "";
+  switch (length) {
+    case ArticleLength.Short:
+      lengthPrompt = "Generate a short, concise article (approx. 6-10 sentences). Keep the plot simple and direct.";
+      break;
+    case ArticleLength.Medium:
+      lengthPrompt = "Generate a standard length article (approx. 15-20 sentences). Develop the plot with some detail and context.";
+      break;
+    case ArticleLength.Long:
+      lengthPrompt = "Generate a long, comprehensive article (approx. 30-45 sentences). The plot must be rich, detailed, and well-developed. Include deeper context, dialogue (if fiction), or detailed analysis (if non-fiction).";
+      break;
+    default:
+      lengthPrompt = "Generate a standard length article (approx. 10-15 sentences).";
+  }
 
   const prompt = `
     Create a trilingual study article (Japanese, Chinese, English).
@@ -48,12 +64,14 @@ export const generateArticleContent = async (
     Topic: ${topic || "Random interesting topic"}
     Genre: ${genre}
     Difficulty Level: ${difficulty}
+    Length Requirement: ${lengthPrompt}
     
     Requirements:
     1. The content must be natural and appropriate for the requested difficulty.
     2. Provide the content split accurately into sentences.
     3. For 'ja_ruby' and 'title_ja_ruby', use standard HTML <ruby>Kanji<rt>reading</rt></ruby> syntax.
     4. Ensure translations are accurate and capture the nuance.
+    5. CRITICAL: Respect the length requirement. If 'Long' is selected, provide a substantial amount of content with narrative depth.
   `;
 
   try {

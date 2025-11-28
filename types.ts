@@ -16,6 +16,12 @@ export enum Genre {
   Travel = "Travel & Tourism"
 }
 
+export enum ArticleLength {
+  Short = "Short (Quick Read)",
+  Medium = "Medium (Standard)",
+  Long = "Long (Deep Dive)"
+}
+
 export interface Sentence {
   id: string;
   ja: string;         // Plain Japanese
