@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, PenTool, Library, Settings, Menu, X, Download, Trash2, PlayCircle, StopCircle, Mic, Search, Leaf } from 'lucide-react';
+import { PenTool, Library, Settings, Menu, X, Download, Trash2, PlayCircle, Search, Leaf } from 'lucide-react';
 import { Article, Difficulty, Genre, Sentence } from './types';
 import * as GeminiService from './services/geminiService';
 import * as StorageService from './services/storageService';
@@ -310,7 +310,7 @@ const Reader = ({ article, onBack }: { article: Article, onBack: () => void }) =
             </div>
 
             <div className="space-y-4 max-w-3xl mx-auto">
-                {article.sentences.map((s, idx) => (
+                {article.sentences.map((s) => (
                     <div 
                         key={s.id}
                         onClick={() => { setSelectedSentence(s); setAnalysis(null); }}
@@ -436,7 +436,7 @@ const Reader = ({ article, onBack }: { article: Article, onBack: () => void }) =
 };
 
 // 5. Library Component
-const LibraryView = ({ onSelect, onDelete }: { onSelect: (a: Article) => void, onDelete: (id: string) => void }) => {
+const LibraryView = ({ onSelect }: { onSelect: (a: Article) => void }) => {
   const [articles, setArticles] = useState<Article[]>([]);
 
   useEffect(() => {
@@ -546,8 +546,6 @@ export default function App() {
           {activeTab === 'library' && (
               <LibraryView 
                 onSelect={handleArticleCreated} 
-                onDelete={(id) => {
-                }} 
               />
           )}
         </main>
