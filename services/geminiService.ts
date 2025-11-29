@@ -35,6 +35,17 @@ const articleSchema = {
   required: ["title_ja", "title_ja_ruby", "title_zh", "title_en", "sentences"],
 };
 
+const continuationSchema = {
+  type: Type.OBJECT,
+  properties: {
+    sentences: {
+      type: Type.ARRAY,
+      items: sentenceSchema,
+    },
+  },
+  required: ["sentences"],
+};
+
 export const generateArticleContent = async (
   topic: string,
   genre: Genre,
@@ -110,6 +121,66 @@ export const generateArticleContent = async (
     throw error;
   }
 };
+
+export const continueArticleContent = async (
+    article: Article,
+    userInstruction: string
+  ): Promise<Sentence[]> => {
+    const modelId = "gemini-2.5-flash";
+    
+    // Get the last 10 sentences for context to minimize token usage while maintaining flow
+    const contextSentences = article.sentences.slice(-10);
+    const contextText = contextSentences.map(s => s.ja).join("\n");
+  
+    const prompt = `
+      You are an AI assistant continuing a story or article for a language learner.
+      
+      Current Title: ${article.title.ja} (${article.title.en})
+      Genre: ${article.genre}
+      Difficulty: ${article.difficulty}
+      
+      Last few sentences of the story so far:
+      """
+      ${contextText}
+      """
+      
+      User's Direction for what happens next:
+      "${userInstruction ? userInstruction : "Continue the story naturally from where it left off."}"
+      
+      Requirements:
+      1. Generate approximately 5-8 new sentences that follow logically.
+      2. Match the existing difficulty level and tone.
+      3. CRITICAL: The 'ja_ruby' field MUST contain HTML <ruby> tags (e.g., <ruby>漢字<rt>かんじ</rt></ruby>) for ALL kanji. Do NOT output plain Japanese in 'ja_ruby'.
+      4. Return ONLY the new sentences in the specified JSON format.
+    `;
+  
+    try {
+      const response = await ai.models.generateContent({
+        model: modelId,
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: continuationSchema,
+          temperature: 0.7,
+        },
+      });
+  
+      const text = response.text;
+      if (!text) throw new Error("No response from Gemini");
+  
+      const json = JSON.parse(text);
+      
+      const newSentences: Sentence[] = json.sentences.map((s: any, index: number) => ({
+        ...s,
+        id: `cont-${Date.now()}-${index}`
+      }));
+  
+      return newSentences;
+    } catch (error) {
+      console.error("Gemini Continuation Error:", error);
+      throw error;
+    }
+  };
 
 export const parseManualInput = async (textInput: string): Promise<Omit<Article, "id" | "createdAt" | "genre" | "difficulty">> => {
   const modelId = "gemini-2.5-flash";

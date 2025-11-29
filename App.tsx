@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { PenTool, Library, Settings, Menu, X, Download, Trash2, PlayCircle, Search, Leaf } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { PenTool, Library, Settings, Menu, X, Download, Trash2, PlayCircle, Search, Leaf, Sparkles, Send, Type } from 'lucide-react';
 import { Article, Difficulty, Genre, ArticleLength, Sentence } from './types';
 import * as GeminiService from './services/geminiService';
 import * as StorageService from './services/storageService';
@@ -262,11 +262,25 @@ const ManualInput = ({ onArticleGenerated }: { onArticleGenerated: (a: Article) 
 };
 
 // 4. Reader Component
-const Reader = ({ article, onBack }: { article: Article, onBack: () => void }) => {
+const Reader = ({ 
+    article, 
+    onBack,
+    onUpdate
+}: { 
+    article: Article, 
+    onBack: () => void,
+    onUpdate: (updatedArticle: Article) => void
+}) => {
   const [selectedSentence, setSelectedSentence] = useState<Sentence | null>(null);
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [showRuby, setShowRuby] = useState(true);
+  const [fontSizeLevel, setFontSizeLevel] = useState(1); // 0 = sm, 1 = normal, 2 = lg, 3 = xl, 4 = xxl
+  
+  // Continuation State
+  const [continuationPrompt, setContinuationPrompt] = useState("");
+  const [isExtending, setIsExtending] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const speak = (text: string, lang: string) => {
     window.speechSynthesis.cancel();
@@ -283,6 +297,67 @@ const Reader = ({ article, onBack }: { article: Article, onBack: () => void }) =
     setAnalyzing(false);
   };
 
+  const handleExtendStory = async () => {
+    setIsExtending(true);
+    try {
+        const newSentences = await GeminiService.continueArticleContent(article, continuationPrompt);
+        const updatedArticle: Article = {
+            ...article,
+            sentences: [...article.sentences, ...newSentences]
+        };
+        
+        // Update via parent callback
+        onUpdate(updatedArticle);
+        
+        // Clear prompt
+        setContinuationPrompt("");
+        
+        // Scroll to new content after a brief delay for render
+        setTimeout(() => {
+             scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 300);
+
+    } catch (e) {
+        alert("Could not extend the story. Please try again.");
+    } finally {
+        setIsExtending(false);
+    }
+  }
+
+  // Font Size Classes
+  const getFontSizeClass = (level: number) => {
+      switch(level) {
+          case 0: return "text-lg md:text-xl";
+          case 1: return "text-xl md:text-2xl"; // Default
+          case 2: return "text-2xl md:text-3xl";
+          case 3: return "text-3xl md:text-4xl";
+          case 4: return "text-4xl md:text-5xl leading-tight";
+          default: return "text-xl md:text-2xl";
+      }
+  }
+
+  const getZhFontSizeClass = (level: number) => {
+      switch(level) {
+          case 0: return "text-base";
+          case 1: return "text-lg"; // Default
+          case 2: return "text-xl";
+          case 3: return "text-2xl";
+          case 4: return "text-3xl";
+          default: return "text-lg";
+      }
+  }
+
+  const getEnFontSizeClass = (level: number) => {
+      switch(level) {
+          case 0: return "text-sm";
+          case 1: return "text-base"; // Default
+          case 2: return "text-lg";
+          case 3: return "text-xl";
+          case 4: return "text-2xl";
+          default: return "text-base";
+      }
+  }
+
   return (
     <div className="flex flex-col h-full overflow-hidden relative bg-[#faf9f6] dark:bg-[#201e1c]">
       {/* Top Bar - Mori Style */}
@@ -291,13 +366,32 @@ const Reader = ({ article, onBack }: { article: Article, onBack: () => void }) =
             <button onClick={onBack} className="p-2 hover:bg-[#f3f1eb] dark:hover:bg-[#3e3b36] rounded-full transition-colors">
                 <X size={22} className="text-[#8c8279] dark:text-[#a8a29e]"/>
             </button>
-            <h2 className="font-bold text-[#4a403a] dark:text-[#e8e6e3] truncate max-w-xs md:max-w-md text-lg">
+            <h2 className="font-bold text-[#4a403a] dark:text-[#e8e6e3] truncate max-w-xs md:max-w-md text-lg hidden sm:block">
                 {showRuby && article.title.ja_ruby ? (
                      <span dangerouslySetInnerHTML={{__html: article.title.ja_ruby}} />
                 ) : article.title.ja}
             </h2>
         </div>
-        <div className="flex space-x-3">
+        <div className="flex items-center space-x-3">
+           {/* Font Size Control */}
+           <div className="flex items-center space-x-1 border border-[#e6e2d3] dark:border-[#3e3b36] rounded-lg p-1 bg-[#fffefb] dark:bg-[#2c2a27] mr-2">
+                <button 
+                    onClick={() => setFontSizeLevel(Math.max(0, fontSizeLevel - 1))}
+                    disabled={fontSizeLevel === 0}
+                    className="p-1 text-[#8c8279] hover:text-[#4a403a] disabled:opacity-30 transition-colors"
+                >
+                    <Type size={14} />
+                </button>
+                <span className="text-xs w-4 text-center font-mono text-[#4a403a] dark:text-[#a8a29e]">{fontSizeLevel + 1}</span>
+                <button 
+                    onClick={() => setFontSizeLevel(Math.min(4, fontSizeLevel + 1))}
+                    disabled={fontSizeLevel === 4}
+                    className="p-1 text-[#8c8279] hover:text-[#4a403a] disabled:opacity-30 transition-colors"
+                >
+                    <Type size={20} />
+                </button>
+           </div>
+
            <button 
              onClick={() => setShowRuby(!showRuby)} 
              className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors ${showRuby ? 'bg-[#4a403a] text-[#f3f1eb] border-[#4a403a]' : 'bg-transparent text-[#8c8279] border-[#d4d0c7] hover:border-[#8c8279]'}`}
@@ -342,7 +436,7 @@ const Reader = ({ article, onBack }: { article: Article, onBack: () => void }) =
                         }`}
                     >
                         {/* Japanese */}
-                        <div className="text-xl md:text-2xl leading-relaxed text-[#4a403a] dark:text-[#e8e6e3] font-medium mb-3">
+                        <div className={`${getFontSizeClass(fontSizeLevel)} leading-relaxed text-[#4a403a] dark:text-[#e8e6e3] font-medium mb-3 transition-all duration-300`}>
                            {showRuby ? (
                                <span dangerouslySetInnerHTML={{__html: s.ja_ruby}} />
                            ) : (
@@ -352,11 +446,56 @@ const Reader = ({ article, onBack }: { article: Article, onBack: () => void }) =
 
                         {/* Translations */}
                         <div className={`space-y-2 transition-opacity duration-300 ${selectedSentence?.id === s.id ? 'opacity-100' : 'opacity-60'}`}>
-                             <p className="text-[#5c524b] dark:text-[#b5b0a8] text-lg">{s.zh}</p>
-                             <p className="text-[#8c8279] dark:text-[#786b59] italic text-base serif">{s.en}</p>
+                             <p className={`text-[#5c524b] dark:text-[#b5b0a8] ${getZhFontSizeClass(fontSizeLevel)} transition-all duration-300`}>{s.zh}</p>
+                             <p className={`text-[#8c8279] dark:text-[#786b59] italic serif ${getEnFontSizeClass(fontSizeLevel)} transition-all duration-300`}>{s.en}</p>
                         </div>
                     </div>
                 ))}
+            </div>
+
+            {/* Continuation Section */}
+            <div className="max-w-3xl mx-auto pt-8 border-t border-[#e6e2d3] dark:border-[#3e3b36] mt-12">
+                 <div className="bg-[#f3f1eb] dark:bg-[#2c2a27] p-6 rounded-2xl border border-[#d4d0c7] dark:border-[#3e3b36]">
+                    <h3 className="text-lg font-bold text-[#4a403a] dark:text-[#e8e6e3] mb-3 flex items-center gap-2">
+                        <Sparkles size={18} className="text-[#739072]" /> 
+                        Continue Story
+                    </h3>
+                    <p className="text-sm text-[#8c8279] mb-4">
+                        Want to read more? Tell AI what should happen next, or leave it blank for a surprise.
+                    </p>
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <textarea
+                            disabled={isExtending}
+                            value={continuationPrompt}
+                            onChange={(e) => setContinuationPrompt(e.target.value)}
+                            placeholder="e.g. They decide to go to a ramen shop..."
+                            className="flex-1 px-4 py-3 rounded-xl border border-[#e6e2d3] dark:border-[#3e3b36] bg-[#fffefb] dark:bg-[#353330] text-[#4a403a] dark:text-[#e8e6e3] focus:ring-2 focus:ring-[#739072] outline-none resize-none h-20 md:h-auto"
+                        />
+                        <button 
+                            onClick={handleExtendStory}
+                            disabled={isExtending}
+                            className={`px-6 py-3 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap ${
+                                isExtending 
+                                ? 'bg-[#b5b0a8] cursor-not-allowed' 
+                                : 'bg-[#739072] hover:bg-[#5f7161] hover:shadow-md'
+                            }`}
+                        >
+                            {isExtending ? (
+                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            ) : (
+                                <>
+                                    <span>Append</span>
+                                    <Send size={18} />
+                                </>
+                            )}
+                        </button>
+                    </div>
+                 </div>
+                 {/* Scroll anchor */}
+                 <div ref={scrollRef}></div>
             </div>
         </div>
 
@@ -527,6 +666,11 @@ export default function App() {
     setCurrentArticle(article);
   };
 
+  const handleArticleUpdated = (updatedArticle: Article) => {
+    setCurrentArticle(updatedArticle);
+    StorageService.saveArticle(updatedArticle);
+  };
+
   const handleBackToMenu = () => {
       setCurrentArticle(null);
   }
@@ -535,7 +679,11 @@ export default function App() {
   if (currentArticle) {
       return (
           <div className="h-screen bg-[#faf9f6] dark:bg-[#201e1c] text-[#4a403a] dark:text-[#e8e6e3]">
-             <Reader article={currentArticle} onBack={handleBackToMenu} />
+             <Reader 
+                article={currentArticle} 
+                onBack={handleBackToMenu} 
+                onUpdate={handleArticleUpdated}
+             />
           </div>
       )
   }
