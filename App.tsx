@@ -324,7 +324,7 @@ const Reader = ({
     }
   }
 
-  // Font Size Classes
+  // Font Size Classes - Updated for better visibility on E-ink
   const getFontSizeClass = (level: number) => {
       switch(level) {
           case 0: return "text-lg md:text-xl";
@@ -338,23 +338,23 @@ const Reader = ({
 
   const getZhFontSizeClass = (level: number) => {
       switch(level) {
-          case 0: return "text-base";
-          case 1: return "text-lg"; // Default
-          case 2: return "text-xl";
-          case 3: return "text-2xl";
-          case 4: return "text-3xl";
-          default: return "text-lg";
+          case 0: return "text-lg"; // Was text-base
+          case 1: return "text-xl"; // Was text-lg
+          case 2: return "text-2xl";
+          case 3: return "text-3xl";
+          case 4: return "text-4xl";
+          default: return "text-xl";
       }
   }
 
   const getEnFontSizeClass = (level: number) => {
       switch(level) {
-          case 0: return "text-sm";
-          case 1: return "text-base"; // Default
-          case 2: return "text-lg";
-          case 3: return "text-xl";
-          case 4: return "text-2xl";
-          default: return "text-base";
+          case 0: return "text-base"; // Was text-sm
+          case 1: return "text-lg";   // Was text-base
+          case 2: return "text-xl";
+          case 3: return "text-2xl";
+          case 4: return "text-3xl";
+          default: return "text-lg";
       }
   }
 
@@ -436,7 +436,7 @@ const Reader = ({
                         }`}
                     >
                         {/* Japanese */}
-                        <div className={`${getFontSizeClass(fontSizeLevel)} leading-relaxed text-[#4a403a] dark:text-[#e8e6e3] font-medium mb-3 transition-all duration-300`}>
+                        <div className={`${getFontSizeClass(fontSizeLevel)} leading-relaxed text-[#272320] dark:text-[#e8e6e3] font-medium mb-3 transition-all duration-300`}>
                            {showRuby ? (
                                <span dangerouslySetInnerHTML={{__html: s.ja_ruby}} />
                            ) : (
@@ -445,9 +445,9 @@ const Reader = ({
                         </div>
 
                         {/* Translations */}
-                        <div className={`space-y-2 transition-opacity duration-300 ${selectedSentence?.id === s.id ? 'opacity-100' : 'opacity-60'}`}>
-                             <p className={`text-[#5c524b] dark:text-[#b5b0a8] ${getZhFontSizeClass(fontSizeLevel)} transition-all duration-300`}>{s.zh}</p>
-                             <p className={`text-[#8c8279] dark:text-[#786b59] ${getEnFontSizeClass(fontSizeLevel)} transition-all duration-300`}>{s.en}</p>
+                        <div className={`space-y-2 transition-opacity duration-300 ${selectedSentence?.id === s.id ? 'opacity-100' : 'opacity-90'}`}>
+                             <p className={`text-[#3f3833] dark:text-[#b5b0a8] ${getZhFontSizeClass(fontSizeLevel)} transition-all duration-300`}>{s.zh}</p>
+                             <p className={`text-[#595048] dark:text-[#9ca3af] ${getEnFontSizeClass(fontSizeLevel)} transition-all duration-300 font-serif`}>{s.en}</p>
                         </div>
                     </div>
                 ))}
