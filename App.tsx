@@ -447,7 +447,7 @@ const Reader = ({
                         {/* Translations */}
                         <div className={`space-y-2 transition-opacity duration-300 ${selectedSentence?.id === s.id ? 'opacity-100' : 'opacity-60'}`}>
                              <p className={`text-[#5c524b] dark:text-[#b5b0a8] ${getZhFontSizeClass(fontSizeLevel)} transition-all duration-300`}>{s.zh}</p>
-                             <p className={`text-[#8c8279] dark:text-[#786b59] italic serif ${getEnFontSizeClass(fontSizeLevel)} transition-all duration-300`}>{s.en}</p>
+                             <p className={`text-[#8c8279] dark:text-[#786b59] ${getEnFontSizeClass(fontSizeLevel)} transition-all duration-300`}>{s.en}</p>
                         </div>
                     </div>
                 ))}
