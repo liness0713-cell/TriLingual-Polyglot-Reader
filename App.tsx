@@ -105,7 +105,7 @@ const WorldPress: React.FC<WorldPressProps> = ({ onArticleGenerated }) => {
             <p className="text-[#8c8279] font-medium">Study with global prestige media in real-time.</p>
           </div>
           
-          <div className="flex gap-2 mb-10 overflow-x-auto pb-4 no-scrollbar">
+          <div className="flex flex-wrap gap-2 mb-10">
              {categories.map(cat => (
                <button 
                  key={cat} 
