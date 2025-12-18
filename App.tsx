@@ -138,8 +138,15 @@ const NEWS_PROVIDERS: NewsProvider[] = [
   { id: 'soranews-food', name: 'SoraNews24 Food', url: 'soranews24.com/category/food/', category: 'Food', region: 'Japan', description: 'Quirky and trending Japanese food news.' },
 ];
 
+interface SidebarProps {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+}
+
 // --- 1. Sidebar Component ---
-const Sidebar = ({ activeTab, setActiveTab, isOpen, setIsOpen }: any) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpen, setIsOpen }) => {
   const menuItems = [
     { id: 'press', icon: <Globe size={20} />, label: 'World Press' },
     { id: 'generate', icon: <PenTool size={20} />, label: 'AI Generator' },
@@ -184,8 +191,12 @@ const Sidebar = ({ activeTab, setActiveTab, isOpen, setIsOpen }: any) => {
   );
 };
 
+interface WorldPressProps {
+  onArticleGenerated: (article: Article) => void;
+}
+
 // --- 2. WorldPress Component ---
-const WorldPress = ({ onArticleGenerated }: any) => {
+const WorldPress: React.FC<WorldPressProps> = ({ onArticleGenerated }) => {
   const [selectedProvider, setSelectedProvider] = useState<NewsProvider | null>(null);
   const [headlines, setHeadlines] = useState<NewsHeadline[]>([]);
   const [loading, setLoading] = useState(false);
@@ -210,7 +221,7 @@ const WorldPress = ({ onArticleGenerated }: any) => {
     setProcessingArticle(headline.title);
     try {
       const content = await GeminiService.processNewsArticle(headline, selectedProvider.name);
-      const newArticle: Article = { id: `news-${Date.now()}`, createdAt: Date.now(), ...content };
+      const newArticle: Article = { id: `news-${Date.now()}`, createdAt: Date.now(), genre: Genre.News, difficulty: 'Press Reading', ...content };
       StorageService.saveArticle(newArticle);
       onArticleGenerated(newArticle);
     } catch (e) { alert("Failed to process article."); } finally { setProcessingArticle(null); }
@@ -299,8 +310,12 @@ const WorldPress = ({ onArticleGenerated }: any) => {
   );
 };
 
+interface GeneratorProps {
+  onArticleGenerated: (article: Article) => void;
+}
+
 // --- 3. Generator Component ---
-const Generator = ({ onArticleGenerated }: any) => {
+const Generator: React.FC<GeneratorProps> = ({ onArticleGenerated }) => {
   const [topic, setTopic] = useState('');
   const [genre, setGenre] = useState<Genre>(Genre.DailyLife);
   const [difficulty, setDifficulty] = useState<Difficulty>(Difficulty.Intermediate);
@@ -366,8 +381,12 @@ const Generator = ({ onArticleGenerated }: any) => {
   );
 };
 
+interface ManualInputProps {
+  onArticleGenerated: (article: Article) => void;
+}
+
 // --- 4. Manual Input Component ---
-const ManualInput = ({ onArticleGenerated }: any) => {
+const ManualInput: React.FC<ManualInputProps> = ({ onArticleGenerated }) => {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -400,8 +419,14 @@ const ManualInput = ({ onArticleGenerated }: any) => {
   );
 };
 
+interface ReaderProps {
+  article: Article;
+  onBack: () => void;
+  onUpdate: (updated: Article) => void;
+}
+
 // --- 5. Reader Component ---
-const Reader = ({ article, onBack, onUpdate }: any) => {
+const Reader: React.FC<ReaderProps> = ({ article, onBack, onUpdate }) => {
   const [selectedSentence, setSelectedSentence] = useState<Sentence | null>(null);
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -443,7 +468,7 @@ const Reader = ({ article, onBack, onUpdate }: any) => {
           case 2: return "text-2xl";
           case 3: return "text-3xl";
           case 4: return "text-4xl leading-snug";
-          case 5: return "text-5xl leading-tight"; // Enhanced for high-scale titles
+          case 5: return "text-5xl leading-tight";
           default: return level > 5 ? "text-5xl" : "text-xl";
       }
   }
@@ -505,7 +530,7 @@ const Reader = ({ article, onBack, onUpdate }: any) => {
 
             {/* Content Body */}
             <div className="space-y-12 max-w-4xl mx-auto">
-                {article.sentences.map((s) => (
+                {article.sentences.map((s: Sentence) => (
                     <div 
                       key={s.id} 
                       onClick={() => { setSelectedSentence(s); setAnalysis(null); }} 
@@ -608,8 +633,12 @@ const Reader = ({ article, onBack, onUpdate }: any) => {
   );
 };
 
+interface LibraryViewProps {
+  onSelect: (article: Article) => void;
+}
+
 // --- 6. Library Component ---
-const LibraryView = ({ onSelect }: any) => {
+const LibraryView: React.FC<LibraryViewProps> = ({ onSelect }) => {
   const [articles, setArticles] = useState<Article[]>([]);
   useEffect(() => { setArticles(StorageService.getSavedArticles()); }, []);
   const handleDelete = (e: React.MouseEvent, id: string) => {
