@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { PenTool, Library, Settings, Menu, X, Download, Trash2, PlayCircle, Search, Leaf, Sparkles, Type, Globe, Newspaper, RefreshCw, MessageSquarePlus } from 'lucide-react';
 import { Article, Difficulty, Genre, ArticleLength, Sentence, NewsProvider, NewsHeadline } from './types';
@@ -221,7 +220,8 @@ const WorldPress: React.FC<WorldPressProps> = ({ onArticleGenerated }) => {
     setProcessingArticle(headline.title);
     try {
       const content = await GeminiService.processNewsArticle(headline, selectedProvider.name);
-      const newArticle: Article = { id: `news-${Date.now()}`, createdAt: Date.now(), genre: Genre.News, difficulty: 'Press Reading', ...content };
+      // Removed duplicate genre and difficulty as they are already in content returned by processNewsArticle
+      const newArticle: Article = { id: `news-${Date.now()}`, createdAt: Date.now(), ...content } as Article;
       StorageService.saveArticle(newArticle);
       onArticleGenerated(newArticle);
     } catch (e) { alert("Failed to process article."); } finally { setProcessingArticle(null); }
@@ -652,7 +652,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onSelect }) => {
     <div className="p-6 md:p-12 max-w-6xl mx-auto animate-in fade-in duration-500">
       <h2 className="text-4xl font-bold text-[#4a403a] mb-10 tracking-tight">My Library</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {articles.length > 0 ? articles.map((article) => (
+        {articles.length > 0 ? articles.map((article: Article) => (
           <div key={article.id} onClick={() => onSelect(article)} className="bg-white p-8 rounded-3xl border border-[#e6e2d3] hover:border-[#739072] cursor-pointer relative group transition-all">
             <h3 className="text-2xl font-bold text-[#4a403a] mb-2 truncate group-hover:text-[#739072]">{article.title.ja}</h3>
             <p className="text-sm font-bold text-[#8c8279] mb-4 truncate">{article.title.en}</p>
