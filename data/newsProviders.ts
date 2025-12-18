@@ -72,7 +72,6 @@ export const NEWS_PROVIDERS: NewsProvider[] = [
   { id: 'vogue-jp', name: 'Vogue Japan', url: 'vogue.co.jp', category: 'Fashion', region: 'Japan', description: 'International fashion authority.' },
   { id: 'gq-jp', name: 'GQ Japan', url: 'gqjapan.jp', category: 'Fashion', region: 'Japan', description: 'Men\'s style & culture.' },
   { id: 'popeye', name: 'Popeye Magazine', url: 'popeye.magazine.co.jp', category: 'Fashion', region: 'Japan', description: 'City boy culture magazine.' },
-  { id: 'brutus', name: 'BRUTUS', url: 'brutus.jp', category: 'Culture', region: 'Japan', description: 'Lifestyle & culture magazine.' },
   { id: 'hanako', name: 'Hanako', url: 'hanako.tokyo', category: 'Culture', region: 'Japan', description: 'Tokyo lifestyle guide.' },
   { id: 'timeout-jp', name: 'Time Out Japan', url: 'timeout.jp', category: 'Culture', region: 'Japan', description: 'Urban culture guide.' },
   { id: 'cinra', name: 'CINRA.NET', url: 'cinra.net', category: 'Culture', region: 'Japan', description: 'Art & culture web magazine.' },
