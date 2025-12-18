@@ -36,6 +36,7 @@ export const NEWS_PROVIDERS: NewsProvider[] = [
   { id: 'ascii', name: 'ASCII.jp', url: 'ascii.jp', category: 'Tech', region: 'Japan', description: 'Digital & gadget hub.' },
   { id: 'watch-impress', name: 'Impress Watch', url: 'watch.impress.co.jp', category: 'Tech', region: 'Japan', description: 'Expert tech reviews.' },
   { id: 'pen-online', name: 'Pen Online', url: 'pen-online.jp', category: 'Culture', region: 'Japan', description: 'Art, design & architecture.' },
+  { id: 'brutus', name: 'BRUTUS', url: 'brutus.jp', category: 'Design', region: 'Japan', description: 'Lifestyle & culture magazine.' },
   { id: 'casa-brutus', name: 'Casa BRUTUS', url: 'casabrutus.com', category: 'Design', region: 'Japan', description: 'Architecture & lifestyle.' },
   { id: 'fudge', name: 'FUDGE.jp', url: 'fudge.jp', category: 'Fashion', region: 'Japan', description: 'London-style fashion.' },
   { id: 'ginza', name: 'GINZA', url: 'ginzamag.com', category: 'Fashion', region: 'Japan', description: 'High-end fashion culture.' },
@@ -350,7 +351,6 @@ export const NEWS_PROVIDERS: NewsProvider[] = [
   { id: 'smart-mag', name: 'smart', url: 'smart-web.jp', category: 'Fashion', region: 'Japan', description: 'Street casual men\'s fashion.' },
   { id: 'fine', name: 'FINE', url: 'fine-web.jp', category: 'Fashion', region: 'Japan', description: 'Adult men\'s casual style.' },
 
-  { id: 'brutus', name: 'BRUTUS', url: 'brutus.jp', category: 'Fashion', region: 'Japan', description: 'Lifestyle & culture magazine.' },
   { id: 'tarzan', name: 'Tarzan', url: 'tarzan.jp', category: 'Fashion', region: 'Japan', description: 'Health & fitness lifestyle.' },
   { id: 'premium-mag', name: '&Premium', url: 'andpremium.jp', category: 'Fashion', region: 'Japan', description: 'Quality lifestyle magazine.' },
   { id: 'lightning', name: 'Lightning', url: 'lightning-magazine.jp', category: 'Fashion', region: 'Japan', description: 'American vintage & culture.' },
