@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { PenTool, Library, Settings, Menu, X, Download, Trash2, PlayCircle, Search, Leaf, Sparkles, Send, Type, Globe, Newspaper, ExternalLink, RefreshCw, Filter, MessageSquarePlus } from 'lucide-react';
+import { PenTool, Library, Settings, Menu, X, Download, Trash2, PlayCircle, Search, Leaf, Sparkles, Type, Globe, Newspaper, RefreshCw, MessageSquarePlus } from 'lucide-react';
 import { Article, Difficulty, Genre, ArticleLength, Sentence, NewsProvider, NewsHeadline } from './types';
 import * as GeminiService from './services/geminiService';
 import * as StorageService from './services/storageService';
@@ -54,7 +54,7 @@ const NEWS_PROVIDERS: NewsProvider[] = [
   { id: 'wwd-jp', name: 'WWD Japan', url: 'wwdjapan.com', category: 'Fashion', region: 'Japan', description: 'Fashion business daily.' },
   { id: 'spoon-tamago', name: 'Spoon & Tamago', url: 'spoon-tamago.com', category: 'Design', region: 'Japan', description: 'Japanese art & design.' },
 
-  // --- GLOBAL / WESTERN (50+ SOURCES) ---
+  // --- GLOBAL / WESTERN ---
   { id: 'bbc', name: 'BBC News', url: 'bbc.com/news', category: 'News', region: 'Global', description: 'British public broadcaster.' },
   { id: 'cnn', name: 'CNN', url: 'cnn.com', category: 'News', region: 'Global', description: 'Global news leader.' },
   { id: 'nytimes', name: 'The New York Times', url: 'nytimes.com', category: 'News', region: 'Global', description: 'The Gray Lady.' },
@@ -98,29 +98,44 @@ const NEWS_PROVIDERS: NewsProvider[] = [
   { id: '36kr', name: '36氪 (36Kr)', url: '36kr.com', category: 'Tech', region: 'China', description: 'Tech & startup portal.' },
   { id: 'zaobao', name: '联合早报 (Zaobao)', url: 'zaobao.com', category: 'News', region: 'Global', description: 'Singapore-based Chinese news.' },
 
-  // --- SCIENCE (NEW ADDITIONS) ---
+  // --- SCIENCE (EXPANDED) ---
   { id: 'nature', name: 'Nature', url: 'nature.com', category: 'Science', region: 'Global', description: 'World\'s leading multidisciplinary science journal.' },
   { id: 'sci-mag', name: 'Science Magazine', url: 'science.org', category: 'Science', region: 'Global', description: 'AAAS flagship publication.' },
   { id: 'newton-jp', name: 'Newton (ニュートン)', url: 'newtonpress.co.jp', category: 'Science', region: 'Japan', description: 'Most popular science magazine in Japan.' },
   { id: 'phys-org', name: 'Phys.org', url: 'phys.org', category: 'Science', region: 'Global', description: 'Latest physics and tech research news.' },
   { id: 'sciam', name: 'Scientific American', url: 'scientificamerican.com', category: 'Science', region: 'Global', description: 'Longest running magazine in the US.' },
   { id: 'pop-sci', name: 'Popular Science', url: 'popsci.com', category: 'Science', region: 'Global', description: 'The what\'s new magazine.' },
+  { id: 'space-com', name: 'Space.com', url: 'space.com', category: 'Science', region: 'Global', description: 'The premier source of space exploration news.' },
+  { id: 'sci-news', name: 'Science News', url: 'sciencenews.org', category: 'Science', region: 'Global', description: 'Award-winning news from the world of science.' },
+  { id: 'quanta', name: 'Quanta Magazine', url: 'quantamagazine.org', category: 'Science', region: 'Global', description: 'Illuminating basic science and math research.' },
+  { id: 'natgeo-jp', name: 'National Geographic JP', url: 'natgeo.nikkeibp.co.jp', category: 'Science', region: 'Japan', description: 'Japanese edition of the world-famous exploration magazine.' },
+  { id: 'mit-tech', name: 'MIT Technology Review', url: 'technologyreview.com', category: 'Science', region: 'Global', description: 'Insights into the tech world from MIT experts.' },
 
-  // --- TRAVEL (NEW ADDITIONS) ---
+  // --- TRAVEL (EXPANDED) ---
   { id: 'lonelyplanet', name: 'Lonely Planet', url: 'lonelyplanet.com', category: 'Travel', region: 'Global', description: 'World leader in travel guidebooks.' },
   { id: 'travelleisure', name: 'Travel + Leisure', url: 'travelandleisure.com', category: 'Travel', region: 'Global', description: 'Luxe travel and inspiration.' },
   { id: 'jalan-jp', name: 'Jalan News (じゃらんニュース)', url: 'jalan.net/news/', category: 'Travel', region: 'Japan', description: 'Largest travel and hotel portal in Japan.' },
   { id: 'timeout-tokyo', name: 'Time Out Tokyo', url: 'timeout.com/tokyo', category: 'Travel', region: 'Japan', description: 'Best city guide for Tokyo.' },
   { id: 'cntraveller', name: 'Condé Nast Traveler', url: 'cntraveler.com', category: 'Travel', region: 'Global', description: 'Premium travel news and advice.' },
   { id: 'japan-travel', name: 'Japan Travel (Official)', url: 'japan.travel/en/', category: 'Travel', region: 'Japan', description: 'Official tourism board insights.' },
+  { id: 'japan-guide', name: 'Japan-Guide', url: 'japan-guide.com', category: 'Travel', region: 'Japan', description: 'Most comprehensive resource for Japanese travel.' },
+  { id: 'matcha', name: 'MATCHA', url: 'matcha-jp.com', category: 'Travel', region: 'Japan', description: 'Web magazine for Japan travel and culture.' },
+  { id: 'tripadvisor-jp', name: 'TripAdvisor JP', url: 'tripadvisor.jp', category: 'Travel', region: 'Japan', description: 'World largest travel platform in Japanese.' },
+  { id: 'fodors', name: 'Fodor\'s Travel', url: 'fodors.com', category: 'Travel', region: 'Global', description: 'Expert travel advice and reviews.' },
+  { id: 'cnt-jp', name: 'Condé Nast Traveler JP', url: 'vogue.co.jp/travel', category: 'Travel', region: 'Japan', description: 'High-end travel and lifestyle for Japan.' },
 
-  // --- FOOD (NEW ADDITIONS) ---
+  // --- FOOD (EXPANDED) ---
   { id: 'eater', name: 'Eater', url: 'eater.com', category: 'Food', region: 'Global', description: 'The essential guide to food and dining.' },
   { id: 'foodandwine', name: 'Food & Wine', url: 'foodandwine.com', category: 'Food', region: 'Global', description: 'Recipes, travel and lifestyle.' },
   { id: 'dancyu-jp', name: 'dancyu', url: 'dancyu.jp', category: 'Food', region: 'Japan', description: 'Japan\'s top food enthusiast magazine.' },
   { id: 'tabelog-mag', name: 'Tabelog Magazine', url: 'magazine.tabelog.com', category: 'Food', region: 'Japan', description: 'Deep dives into Japanese gourmet culture.' },
   { id: 'seriouseats', name: 'Serious Eats', url: 'seriouseats.com', category: 'Food', region: 'Global', description: 'The destination for delicious food.' },
   { id: 'bon-appetit', name: 'Bon Appétit', url: 'bonappetit.com', category: 'Food', region: 'Global', description: 'Where food and culture meet.' },
+  { id: 'cookpad', name: 'Cookpad (クックパッド)', url: 'cookpad.com', category: 'Food', region: 'Japan', description: 'Japan\'s largest recipe sharing service.' },
+  { id: 'kurashiru', name: 'Kurashiru (クラシル)', url: 'kurashiru.com', category: 'Food', region: 'Japan', description: 'World\'s #1 recipe video app.' },
+  { id: 'epicurious', name: 'Epicurious', url: 'epicurious.com', category: 'Food', region: 'Global', description: 'Trusted recipes and culinary inspiration.' },
+  { id: 'food52', name: 'Food52', url: 'food52.com', category: 'Food', region: 'Global', description: 'A community for home cooks.' },
+  { id: 'soranews-food', name: 'SoraNews24 Food', url: 'soranews24.com/category/food/', category: 'Food', region: 'Japan', description: 'Quirky and trending Japanese food news.' },
 ];
 
 // --- 1. Sidebar Component ---

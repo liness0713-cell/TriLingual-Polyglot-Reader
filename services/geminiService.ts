@@ -52,12 +52,9 @@ export const fetchLatestHeadlines = async (providerUrl: string): Promise<NewsHea
       },
     });
 
-    // Extracting grounding info to find links
-    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-    
     // Fallback: Parse the text for titles and links if grounding chunks are sparse
     const parsePrompt = `Based on these news results:
-    "${response.text}"
+    "${response.text || ""}"
     Extract them into a JSON array of objects with keys: "title", "snippet", "link". 
     Only return the JSON.`;
 
@@ -81,7 +78,7 @@ export const fetchLatestHeadlines = async (providerUrl: string): Promise<NewsHea
         }
     });
 
-    return JSON.parse(parseResponse.text);
+    return JSON.parse(parseResponse.text || "[]");
   } catch (error) {
     console.error("Headline Fetch Error:", error);
     return [];
@@ -117,19 +114,19 @@ export const processNewsArticle = async (headline: NewsHeadline, sourceName: str
       },
     });
 
-    const json = JSON.parse(response.text);
+    const json = JSON.parse(response.text || "{}");
     
-    const sentences: Sentence[] = json.sentences.map((s: any, index: number) => ({
+    const sentences: Sentence[] = (json.sentences || []).map((s: any, index: number) => ({
       ...s,
       id: `news-${Date.now()}-${index}`
     }));
 
     return {
       title: {
-        ja: json.title_ja,
-        ja_ruby: json.title_ja_ruby,
-        zh: json.title_zh,
-        en: json.title_en,
+        ja: json.title_ja || "",
+        ja_ruby: json.title_ja_ruby || "",
+        zh: json.title_zh || "",
+        en: json.title_en || "",
       },
       genre: Genre.News,
       difficulty: "Press Reading",
@@ -190,18 +187,18 @@ export const generateArticleContent = async (
       },
     });
 
-    const json = JSON.parse(response.text);
-    const sentences: Sentence[] = json.sentences.map((s: any, index: number) => ({
+    const json = JSON.parse(response.text || "{}");
+    const sentences: Sentence[] = (json.sentences || []).map((s: any, index: number) => ({
       ...s,
       id: `gen-${Date.now()}-${index}`
     }));
 
     return {
       title: {
-        ja: json.title_ja,
-        ja_ruby: json.title_ja_ruby,
-        zh: json.title_zh,
-        en: json.title_en,
+        ja: json.title_ja || "",
+        ja_ruby: json.title_ja_ruby || "",
+        zh: json.title_zh || "",
+        en: json.title_en || "",
       },
       sentences,
     };
@@ -243,8 +240,8 @@ export const continueArticleContent = async (
           }
         },
       });
-      const json = JSON.parse(response.text);
-      return json.sentences.map((s: any, index: number) => ({
+      const json = JSON.parse(response.text || "{}");
+      return (json.sentences || []).map((s: any, index: number) => ({
         ...s,
         id: `cont-${Date.now()}-${index}`
       }));
@@ -267,15 +264,15 @@ export const parseManualInput = async (textInput: string): Promise<Omit<Article,
         responseSchema: articleSchema,
       },
     });
-    const json = JSON.parse(response.text);
+    const json = JSON.parse(response.text || "{}");
     return {
       title: {
-        ja: json.title_ja,
-        ja_ruby: json.title_ja_ruby,
-        zh: json.title_zh,
-        en: json.title_en,
+        ja: json.title_ja || "",
+        ja_ruby: json.title_ja_ruby || "",
+        zh: json.title_zh || "",
+        en: json.title_en || "",
       },
-      sentences: json.sentences.map((s: any, index: number) => ({ ...s, id: `manual-${Date.now()}-${index}` })),
+      sentences: (json.sentences || []).map((s: any, index: number) => ({ ...s, id: `manual-${Date.now()}-${index}` })),
     };
   } catch (error) {
     console.error("Parsing Error:", error);
