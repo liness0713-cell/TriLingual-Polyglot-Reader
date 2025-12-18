@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { PenTool, Library, Settings, Menu, X, Download, Trash2, PlayCircle, Search, Leaf, Sparkles, Type, Globe, Newspaper, RefreshCw, MessageSquarePlus } from 'lucide-react';
 import { Article, Difficulty, Genre, ArticleLength, Sentence, NewsProvider, NewsHeadline } from './types';
@@ -86,7 +87,7 @@ const WorldPress: React.FC<WorldPressProps> = ({ onArticleGenerated }) => {
 
   const handleHeadlineClick = async (headline: NewsHeadline) => {
     if (!selectedProvider) return;
-    setProcessingArticle(headline.title);
+    setProcessingArticle(headline.title_ja);
     try {
       const content = await GeminiService.processNewsArticle(headline, selectedProvider.name);
       const newArticle: Article = { id: `news-${Date.now()}`, createdAt: Date.now(), ...content } as Article;
@@ -158,9 +159,12 @@ const WorldPress: React.FC<WorldPressProps> = ({ onArticleGenerated }) => {
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                {headlines.map((headline, idx) => (
                  <div key={idx} onClick={() => handleHeadlineClick(headline)} className="bg-white p-8 rounded-3xl border border-[#e6e2d3] hover:border-[#739072] cursor-pointer group transition-all">
-                   <h4 className="text-2xl font-bold text-[#4a403a] mb-4 leading-tight group-hover:text-[#739072]">{headline.title}</h4>
-                   <p className="text-[#8c8279] line-clamp-3 mb-6 leading-relaxed">{headline.snippet}</p>
-                   <div className="text-sm font-bold text-[#739072] uppercase flex items-center gap-2 tracking-widest"><Sparkles size={16} /> AI Study Ready</div>
+                   <div className="mb-6 space-y-3">
+                     <h4 className="text-2xl font-bold text-[#4a403a] leading-tight group-hover:text-[#739072] transition-colors" dangerouslySetInnerHTML={{ __html: headline.title_ja_ruby }} />
+                     <p className="text-lg font-medium text-[#786b59]">{headline.title_zh}</p>
+                     <p className="text-base text-[#1a1a1a] font-bold">{headline.title_en}</p>
+                   </div>
+                   <div className="text-sm font-bold text-[#739072] uppercase flex items-center gap-2 tracking-widest pt-4 border-t border-[#f3f1eb]"><Sparkles size={16} /> AI Study Ready</div>
                  </div>
                ))}
              </div>

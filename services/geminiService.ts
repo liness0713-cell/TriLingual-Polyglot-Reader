@@ -36,12 +36,13 @@ const articleSchema = {
   required: ["title_ja", "title_ja_ruby", "title_zh", "title_en", "sentences"],
 };
 
-// Fetch latest headlines using Search Grounding
+// Fetch latest headlines and translate them immediately to trilingual (optimized)
 export const fetchLatestHeadlines = async (providerUrl: string): Promise<NewsHeadline[]> => {
   const modelId = "gemini-3-flash-preview";
   
-  const prompt = `Find the latest 12 news headlines and short snippets from ${providerUrl}. 
-  Focus on the most recent, top-level news. Return the results in a clear list.`;
+  // Phase 1: Search for raw headlines
+  const prompt = `Find the latest 10-12 news headlines from ${providerUrl}. 
+  Focus on high-quality news titles. List them clearly.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -52,10 +53,15 @@ export const fetchLatestHeadlines = async (providerUrl: string): Promise<NewsHea
       },
     });
 
-    // Fallback: Parse the text for titles and links if grounding chunks are sparse
-    const parsePrompt = `Based on these news results:
+    // Phase 2: Extract, Translate and Annotate with Ruby
+    const parsePrompt = `Based on these news titles:
     "${response.text || ""}"
-    Extract them into a JSON array of objects with keys: "title", "snippet", "link". 
+    Extract them into a JSON array. For each title:
+    1. title_ja: The title in Japanese.
+    2. title_ja_ruby: The title in Japanese with HTML <ruby> tags for all Kanji.
+    3. title_zh: A professional Chinese translation.
+    4. title_en: A professional English translation.
+    5. link: The direct article link.
     Only return the JSON.`;
 
     const parseResponse = await ai.models.generateContent({
@@ -68,11 +74,13 @@ export const fetchLatestHeadlines = async (providerUrl: string): Promise<NewsHea
                 items: {
                     type: Type.OBJECT,
                     properties: {
-                        title: { type: Type.STRING },
-                        snippet: { type: Type.STRING },
+                        title_ja: { type: Type.STRING },
+                        title_ja_ruby: { type: Type.STRING },
+                        title_zh: { type: Type.STRING },
+                        title_en: { type: Type.STRING },
                         link: { type: Type.STRING }
                     },
-                    required: ["title", "snippet", "link"]
+                    required: ["title_ja", "title_ja_ruby", "title_zh", "title_en", "link"]
                 }
             }
         }
@@ -91,7 +99,7 @@ export const processNewsArticle = async (headline: NewsHeadline, sourceName: str
 
   const prompt = `
     I want to study the following news article:
-    Title: ${headline.title}
+    Title: ${headline.title_ja}
     URL: ${headline.link}
     Source: ${sourceName}
 
@@ -100,7 +108,7 @@ export const processNewsArticle = async (headline: NewsHeadline, sourceName: str
     3. Split the text into logical sentences.
     4. Provide the content in Japanese, Chinese, and English.
     5. For 'ja_ruby' and 'title_ja_ruby', use HTML <ruby> tags for all Kanji.
-    6. Ensure the translations are highly accurate and match the professional tone of the original news source.
+    6. Ensure the translations are highly accurate.
   `;
 
   try {
@@ -123,10 +131,10 @@ export const processNewsArticle = async (headline: NewsHeadline, sourceName: str
 
     return {
       title: {
-        ja: json.title_ja || "",
-        ja_ruby: json.title_ja_ruby || "",
-        zh: json.title_zh || "",
-        en: json.title_en || "",
+        ja: json.title_ja || headline.title_ja,
+        ja_ruby: json.title_ja_ruby || headline.title_ja_ruby,
+        zh: json.title_zh || headline.title_zh,
+        en: json.title_en || headline.title_en,
       },
       genre: Genre.News,
       difficulty: "Press Reading",

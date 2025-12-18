@@ -57,7 +57,9 @@ export interface NewsProvider {
 }
 
 export interface NewsHeadline {
-  title: string;
-  snippet: string;
+  title_ja: string;
+  title_ja_ruby: string;
+  title_zh: string;
+  title_en: string;
   link: string;
 }
