@@ -1,3 +1,4 @@
+
 export enum Difficulty {
   Beginner = "Beginner (N5/A1)",
   Elementary = "Elementary (N4/A2)",
@@ -34,7 +35,7 @@ export interface Article {
   id: string;
   title: {
     ja: string;
-    ja_ruby?: string; // HTML string with <ruby> tags for title
+    ja_ruby?: string; 
     zh: string;
     en: string;
   };
@@ -42,8 +43,21 @@ export interface Article {
   difficulty: Difficulty | string;
   sentences: Sentence[];
   createdAt: number;
+  sourceUrl?: string;
+  sourceName?: string;
 }
 
-export interface AnalysisResult {
-  markdown: string;
+export interface NewsProvider {
+  id: string;
+  name: string;
+  url: string;
+  category: "News" | "Finance" | "Tech" | "Fashion" | "Culture" | "Science" | "Travel" | "Food" | "Sports" | "Design" | "Gaming";
+  region: "Japan" | "Global" | "China";
+  description: string;
+}
+
+export interface NewsHeadline {
+  title: string;
+  snippet: string;
+  link: string;
 }

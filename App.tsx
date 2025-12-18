@@ -1,30 +1,132 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { PenTool, Library, Settings, Menu, X, Download, Trash2, PlayCircle, Search, Leaf, Sparkles, Send, Type } from 'lucide-react';
-import { Article, Difficulty, Genre, ArticleLength, Sentence } from './types';
+import { PenTool, Library, Settings, Menu, X, Download, Trash2, PlayCircle, Search, Leaf, Sparkles, Send, Type, Globe, Newspaper, ExternalLink, RefreshCw, Filter, MessageSquarePlus } from 'lucide-react';
+import { Article, Difficulty, Genre, ArticleLength, Sentence, NewsProvider, NewsHeadline } from './types';
 import * as GeminiService from './services/geminiService';
 import * as StorageService from './services/storageService';
 import ReactMarkdown from 'react-markdown';
 
-// --- Colors for Mori/Forest Theme ---
-// Bg Main: #faf9f6 (Off white)
-// Sidebar: #f3f1eb (Warm light beige)
-// Accents: #739072 (Sage Green), #4f6f52 (Forest Green)
-// Text: #4a403a (Dark Brown/Bark)
-// Highlights: #e9edc9 (Pale Green)
+// --- ULTIMATE NEWS PROVIDERS CONFIGURATION (EXTENDED) ---
+const NEWS_PROVIDERS: NewsProvider[] = [
+  // --- JAPAN (45+ SOURCES) ---
+  { id: 'yomiuri', name: 'Yomiuri Shimbun (読売新聞)', url: 'yomiuri.co.jp', category: 'News', region: 'Japan', description: 'Highest circulation globally.' },
+  { id: 'asahi', name: 'Asahi Shimbun (朝日新聞)', url: 'asahi.com', category: 'News', region: 'Japan', description: 'Progressive national newspaper.' },
+  { id: 'mainichi', name: 'Mainichi Shimbun (毎日新聞)', url: 'mainichi.jp', category: 'News', region: 'Japan', description: 'Long-standing national paper.' },
+  { id: 'nikkei', name: 'Nikkei (日本经济新闻)', url: 'nikkei.com', category: 'Finance', region: 'Japan', description: 'Business daily.' },
+  { id: 'sankei', name: 'Sankei Shimbun (産経新聞)', url: 'sankei.com', category: 'News', region: 'Japan', description: 'Conservative national daily.' },
+  { id: 'nhk', name: 'NHK News', url: 'www3.nhk.or.jp/news/', category: 'News', region: 'Japan', description: 'Public broadcaster.' },
+  { id: 'kyodo', name: 'Kyodo News (共同通信)', url: 'kyodonews.net', category: 'News', region: 'Japan', description: 'Major news agency.' },
+  { id: 'jiji', name: 'Jiji Press (时事通信)', url: 'jiji.com', category: 'News', region: 'Japan', description: 'Global news agency.' },
+  { id: 'tokyo-np', name: 'Tokyo Shimbun (东京新闻)', url: 'tokyo-np.co.jp', category: 'News', region: 'Japan', description: 'Leading regional daily.' },
+  { id: 'japantimes', name: 'The Japan Times', url: 'japantimes.co.jp', category: 'News', region: 'Japan', description: 'English daily.' },
+  { id: 'toyokeizai', name: 'Toyo Keizai (东洋经济)', url: 'toyokeizai.net', category: 'Finance', region: 'Japan', description: 'Economic analysis.' },
+  { id: 'diamond', name: 'Diamond Online', url: 'diamond.jp', category: 'Finance', region: 'Japan', description: 'Management insights.' },
+  { id: 'huffpost-jp', name: 'HuffPost Japan', url: 'huffingtonpost.jp', category: 'News', region: 'Japan', description: 'Digital news.' },
+  { id: 'buzzfeed-jp', name: 'BuzzFeed Japan', url: 'buzzfeed.com/jp', category: 'Culture', region: 'Japan', description: 'Pop culture & news.' },
+  { id: 'newsweek-jp', name: 'Newsweek Japan', url: 'newsweekjapan.jp', category: 'News', region: 'Japan', description: 'International news.' },
+  { id: 'gendai', name: 'Gendai Business (现代ビジネス)', url: 'gendai.ismedia.jp', category: 'Finance', region: 'Japan', description: 'Business & lifestyle.' },
+  { id: 'president', name: 'President Online', url: 'president.jp', category: 'Finance', region: 'Japan', description: 'Leadership & economy.' },
+  { id: 'courrier-jp', name: 'Courrier Japon', url: 'courrier.jp', category: 'Culture', region: 'Japan', description: 'Global perspective in Japanese.' },
+  { id: 'wired-jp', name: 'WIRED Japan', url: 'wired.jp', category: 'Tech', region: 'Japan', description: 'Tech & culture.' },
+  { id: 'gizmodo-jp', name: 'Gizmodo Japan', url: 'gizmodo.jp', category: 'Tech', region: 'Japan', description: 'Gadget & future.' },
+  { id: 'fnn', name: 'FNN Prime Online', url: 'fnn.jp', category: 'News', region: 'Japan', description: 'Fuji News Network.' },
+  { id: 'tbs-news', name: 'TBS NEWS DIG', url: 'newsdig.tbs.co.jp', category: 'News', region: 'Japan', description: 'TBS news portal.' },
+  { id: 'abema', name: 'ABEMA Times', url: 'times.abema.tv', category: 'News', region: 'Japan', description: 'Internet news.' },
+  { id: 'nikkan-sports', name: 'Nikkan Sports (日刊スポーツ)', url: 'nikkansports.com', category: 'Sports', region: 'Japan', description: 'Leading sports daily.' },
+  { id: 'sports-hochi', name: 'Sports Hochi (スポーツ報知)', url: 'hochi.news', category: 'Sports', region: 'Japan', description: 'Entertainment and sports.' },
+  { id: 'daily-sports', name: 'Daily Sports (デイリースポーツ)', url: 'daily.co.jp', category: 'Sports', region: 'Japan', description: 'Kansai-based sports daily.' },
+  { id: 'kyoto-np', name: 'Kyoto Shimbun (京都新聞)', url: 'kyoto-np.co.jp', category: 'News', region: 'Japan', description: 'Voices from the ancient capital.' },
+  { id: 'kobe-np', name: 'Kobe Shimbun (神戸新聞)', url: 'kobe-np.co.jp', category: 'News', region: 'Japan', description: 'Hyogo prefecture voice.' },
+  { id: 'ryukyu', name: 'Ryukyu Shimpo (琉球新報)', url: 'ryukyushimpo.jp', category: 'News', region: 'Japan', description: 'Major Okinawan paper.' },
+  { id: 'itmedia', name: 'ITmedia', url: 'itmedia.co.jp', category: 'Tech', region: 'Japan', description: 'Largest tech news site.' },
+  { id: 'ascii', name: 'ASCII.jp', url: 'ascii.jp', category: 'Tech', region: 'Japan', description: 'Digital & gadget hub.' },
+  { id: 'watch-impress', name: 'Impress Watch', url: 'watch.impress.co.jp', category: 'Tech', region: 'Japan', description: 'Expert tech reviews.' },
+  { id: 'pen-online', name: 'Pen Online', url: 'pen-online.jp', category: 'Culture', region: 'Japan', description: 'Art, design & architecture.' },
+  { id: 'casa-brutus', name: 'Casa BRUTUS', url: 'casabrutus.com', category: 'Design', region: 'Japan', description: 'Architecture & lifestyle.' },
+  { id: 'fudge', name: 'FUDGE.jp', url: 'fudge.jp', category: 'Fashion', region: 'Japan', description: 'London-style fashion.' },
+  { id: 'ginza', name: 'GINZA', url: 'ginzamag.com', category: 'Fashion', region: 'Japan', description: 'High-end fashion culture.' },
+  { id: 'elle-jp', name: 'Elle Japan', url: 'elle.com/jp', category: 'Fashion', region: 'Japan', description: 'Women\'s fashion daily.' },
+  { id: 'famitsu', name: 'Famitsu (ファミ通)', url: 'famitsu.com', category: 'Gaming', region: 'Japan', description: 'Legendary gaming magazine.' },
+  { id: '4gamer', name: '4Gamer.net', url: '4gamer.net', category: 'Gaming', region: 'Japan', description: 'Hardcore gaming news.' },
+  { id: 'dengeki', name: 'Dengeki Online (電撃オンライン)', url: 'dengekionline.com', category: 'Gaming', region: 'Japan', description: 'Anime & game news.' },
+  { id: 'ign-jp', name: 'IGN Japan', url: 'jp.ign.com', category: 'Gaming', region: 'Japan', description: 'Global gaming authority in JP.' },
+  { id: 'fashionsnap', name: 'FASHIONSNAP', url: 'fashionsnap.com', category: 'Fashion', region: 'Japan', description: 'Leading fashion web media.' },
+  { id: 'wwd-jp', name: 'WWD Japan', url: 'wwdjapan.com', category: 'Fashion', region: 'Japan', description: 'Fashion business daily.' },
+  { id: 'spoon-tamago', name: 'Spoon & Tamago', url: 'spoon-tamago.com', category: 'Design', region: 'Japan', description: 'Japanese art & design.' },
 
-// 1. Sidebar Component
-const Sidebar = ({ 
-  activeTab, 
-  setActiveTab, 
-  isOpen, 
-  setIsOpen 
-}: { 
-  activeTab: string, 
-  setActiveTab: (t: string) => void,
-  isOpen: boolean,
-  setIsOpen: (o: boolean) => void
-}) => {
+  // --- GLOBAL / WESTERN (50+ SOURCES) ---
+  { id: 'bbc', name: 'BBC News', url: 'bbc.com/news', category: 'News', region: 'Global', description: 'British public broadcaster.' },
+  { id: 'cnn', name: 'CNN', url: 'cnn.com', category: 'News', region: 'Global', description: 'Global news leader.' },
+  { id: 'nytimes', name: 'The New York Times', url: 'nytimes.com', category: 'News', region: 'Global', description: 'The Gray Lady.' },
+  { id: 'wapo', name: 'Washington Post', url: 'washingtonpost.com', category: 'News', region: 'Global', description: 'Democracy Dies in Darkness.' },
+  { id: 'guardian', name: 'The Guardian', url: 'theguardian.com', category: 'News', region: 'Global', description: 'Independent UK voice.' },
+  { id: 'reuters', name: 'Reuters', url: 'reuters.com', category: 'News', region: 'Global', description: 'World-leading agency.' },
+  { id: 'ap', name: 'AP News', url: 'apnews.com', category: 'News', region: 'Global', description: 'The gold standard.' },
+  { id: 'wsj', name: 'Wall Street Journal', url: 'wsj.com', category: 'Finance', region: 'Global', description: 'Finance & markets.' },
+  { id: 'ft', name: 'Financial Times', url: 'ft.com', category: 'Finance', region: 'Global', description: 'Pink paper from London.' },
+  { id: 'bloomberg', name: 'Bloomberg', url: 'bloomberg.com', category: 'Finance', region: 'Global', description: 'Market intelligence.' },
+  { id: 'economist', name: 'The Economist', url: 'economist.com', category: 'Finance', region: 'Global', description: 'In-depth analysis.' },
+  { id: 'time', name: 'TIME', url: 'time.com', category: 'News', region: 'Global', description: 'Weekly authority.' },
+  { id: 'wired', name: 'WIRED', url: 'wired.com', category: 'Tech', region: 'Global', description: 'Future tech & culture.' },
+  { id: 'verge', name: 'The Verge', url: 'theverge.com', category: 'Tech', region: 'Global', description: 'Consumer tech & art.' },
+  { id: 'vogue', name: 'Vogue', url: 'vogue.com', category: 'Fashion', region: 'Global', description: 'High fashion.' },
+  { id: 'bof', name: 'Business of Fashion', url: 'businessoffashion.com', category: 'Fashion', region: 'Global', description: 'The fashion industry bible.' },
+  { id: 'wwd', name: 'WWD', url: 'wwd.com', category: 'Fashion', region: 'Global', description: 'Women\'s Wear Daily.' },
+  { id: 'hypebeast', name: 'Hypebeast', url: 'hypebeast.com', category: 'Fashion', region: 'Global', description: 'Streetwear culture.' },
+  { id: 'highsnobiety', name: 'Highsnobiety', url: 'highsnobiety.com', category: 'Fashion', region: 'Global', description: 'Lifestyle & fashion.' },
+  { id: 'ign', name: 'IGN', url: 'ign.com', category: 'Gaming', region: 'Global', description: 'Gaming & entertainment.' },
+  { id: 'polygon', name: 'Polygon', url: 'polygon.com', category: 'Gaming', region: 'Global', description: 'Gaming culture & news.' },
+  { id: 'gamesradar', name: 'GamesRadar+', url: 'gamesradar.com', category: 'Gaming', region: 'Global', description: 'Gaming, movies, TV.' },
+  { id: 'eurogamer', name: 'Eurogamer', url: 'eurogamer.net', category: 'Gaming', region: 'Global', description: 'European gaming giant.' },
+  { id: 'pcgamer', name: 'PC Gamer', url: 'pcgamer.com', category: 'Gaming', region: 'Global', description: 'The PC gaming authority.' },
+  { id: 'kotaku', name: 'Kotaku', url: 'kotaku.com', category: 'Gaming', region: 'Global', description: 'Games and culture.' },
+  { id: 'archdigest', name: 'Architectural Digest', url: 'architecturaldigest.com', category: 'Design', region: 'Global', description: 'Interior design authority.' },
+  { id: 'wallpaper', name: 'Wallpaper*', url: 'wallpaper.com', category: 'Design', region: 'Global', description: 'Design, fashion, art.' },
+  { id: 'design-milk', name: 'Design Milk', url: 'design-milk.com', category: 'Design', region: 'Global', description: 'Modern design blog.' },
+  { id: 'dezeen', name: 'Dezeen', url: 'dezeen.com', category: 'Design', region: 'Global', description: 'Architecture & interiors.' },
+  { id: 'archdaily', name: 'ArchDaily', url: 'archdaily.com', category: 'Design', region: 'Global', description: 'Architecture hub.' },
+  { id: 'monocle', name: 'Monocle', url: 'monocle.com', category: 'Culture', region: 'Global', description: 'Urban affairs & design.' },
+  { id: 'newyorker', name: 'The New Yorker', url: 'newyorker.com', category: 'Culture', region: 'Global', description: 'Deep essays & fiction.' },
+  { id: 'natgeo', name: 'National Geographic', url: 'nationalgeographic.com', category: 'Science', region: 'Global', description: 'Science & exploration.' },
+  { id: 'techcrunch', name: 'TechCrunch', url: 'techcrunch.com', category: 'Tech', region: 'Global', description: 'Startup news.' },
+
+  // --- CHINA (20 SOURCES) ---
+  { id: 'thepaper', name: '澎湃新闻 (The Paper)', url: 'thepaper.cn', category: 'News', region: 'China', description: 'Shanghai investigative news.' },
+  { id: 'caixin', name: '财新网 (Caixin)', url: 'caixin.com', category: 'Finance', region: 'China', description: 'Elite business news.' },
+  { id: 'sixthtone', name: 'Sixth Tone', url: 'sixthtone.com', category: 'Culture', region: 'China', description: 'Deep social features.' },
+  { id: 'scmp', name: 'South China Morning Post', url: 'scmp.com', category: 'News', region: 'China', description: 'Hong Kong leading voice.' },
+  { id: '36kr', name: '36氪 (36Kr)', url: '36kr.com', category: 'Tech', region: 'China', description: 'Tech & startup portal.' },
+  { id: 'zaobao', name: '联合早报 (Zaobao)', url: 'zaobao.com', category: 'News', region: 'Global', description: 'Singapore-based Chinese news.' },
+
+  // --- SCIENCE (NEW ADDITIONS) ---
+  { id: 'nature', name: 'Nature', url: 'nature.com', category: 'Science', region: 'Global', description: 'World\'s leading multidisciplinary science journal.' },
+  { id: 'sci-mag', name: 'Science Magazine', url: 'science.org', category: 'Science', region: 'Global', description: 'AAAS flagship publication.' },
+  { id: 'newton-jp', name: 'Newton (ニュートン)', url: 'newtonpress.co.jp', category: 'Science', region: 'Japan', description: 'Most popular science magazine in Japan.' },
+  { id: 'phys-org', name: 'Phys.org', url: 'phys.org', category: 'Science', region: 'Global', description: 'Latest physics and tech research news.' },
+  { id: 'sciam', name: 'Scientific American', url: 'scientificamerican.com', category: 'Science', region: 'Global', description: 'Longest running magazine in the US.' },
+  { id: 'pop-sci', name: 'Popular Science', url: 'popsci.com', category: 'Science', region: 'Global', description: 'The what\'s new magazine.' },
+
+  // --- TRAVEL (NEW ADDITIONS) ---
+  { id: 'lonelyplanet', name: 'Lonely Planet', url: 'lonelyplanet.com', category: 'Travel', region: 'Global', description: 'World leader in travel guidebooks.' },
+  { id: 'travelleisure', name: 'Travel + Leisure', url: 'travelandleisure.com', category: 'Travel', region: 'Global', description: 'Luxe travel and inspiration.' },
+  { id: 'jalan-jp', name: 'Jalan News (じゃらんニュース)', url: 'jalan.net/news/', category: 'Travel', region: 'Japan', description: 'Largest travel and hotel portal in Japan.' },
+  { id: 'timeout-tokyo', name: 'Time Out Tokyo', url: 'timeout.com/tokyo', category: 'Travel', region: 'Japan', description: 'Best city guide for Tokyo.' },
+  { id: 'cntraveller', name: 'Condé Nast Traveler', url: 'cntraveler.com', category: 'Travel', region: 'Global', description: 'Premium travel news and advice.' },
+  { id: 'japan-travel', name: 'Japan Travel (Official)', url: 'japan.travel/en/', category: 'Travel', region: 'Japan', description: 'Official tourism board insights.' },
+
+  // --- FOOD (NEW ADDITIONS) ---
+  { id: 'eater', name: 'Eater', url: 'eater.com', category: 'Food', region: 'Global', description: 'The essential guide to food and dining.' },
+  { id: 'foodandwine', name: 'Food & Wine', url: 'foodandwine.com', category: 'Food', region: 'Global', description: 'Recipes, travel and lifestyle.' },
+  { id: 'dancyu-jp', name: 'dancyu', url: 'dancyu.jp', category: 'Food', region: 'Japan', description: 'Japan\'s top food enthusiast magazine.' },
+  { id: 'tabelog-mag', name: 'Tabelog Magazine', url: 'magazine.tabelog.com', category: 'Food', region: 'Japan', description: 'Deep dives into Japanese gourmet culture.' },
+  { id: 'seriouseats', name: 'Serious Eats', url: 'seriouseats.com', category: 'Food', region: 'Global', description: 'The destination for delicious food.' },
+  { id: 'bon-appetit', name: 'Bon Appétit', url: 'bonappetit.com', category: 'Food', region: 'Global', description: 'Where food and culture meet.' },
+];
+
+// --- 1. Sidebar Component ---
+const Sidebar = ({ activeTab, setActiveTab, isOpen, setIsOpen }: any) => {
   const menuItems = [
+    { id: 'press', icon: <Globe size={20} />, label: 'World Press' },
     { id: 'generate', icon: <PenTool size={20} />, label: 'AI Generator' },
     { id: 'manual', icon: <Settings size={20} />, label: 'Manual Input' },
     { id: 'library', icon: <Library size={20} />, label: 'My Library' },
@@ -32,51 +134,33 @@ const Sidebar = ({
 
   return (
     <>
-      {/* Mobile Overlay */}
       {isOpen && (
-        <div 
-          className="fixed inset-0 bg-[#4a403a]/20 backdrop-blur-sm z-20 md:hidden"
-          onClick={() => setIsOpen(false)}
-        />
+        <div className="fixed inset-0 bg-[#4a403a]/20 backdrop-blur-sm z-20 md:hidden" onClick={() => setIsOpen(false)} />
       )}
-      
-      {/* Sidebar - Mori Style */}
-      <div className={`fixed inset-y-0 left-0 z-30 w-64 bg-[#f3f1eb] dark:bg-[#2c2a27] border-r border-[#e6e2d3] dark:border-[#3e3b36] transform transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'} flex flex-col font-sans`}>
-        <div className="flex items-center justify-between p-6 border-b border-[#e6e2d3] dark:border-[#3e3b36]">
-          <h1 className="text-xl font-bold text-[#4a403a] dark:text-[#e8e6e3] tracking-tight flex items-center gap-2">
-            <Leaf size={20} className="text-[#739072]" />
-            Polyglot
+      <div className={`fixed inset-y-0 left-0 z-30 w-64 bg-[#f3f1eb] border-r border-[#d1cdc2] transform transition-transform duration-300 md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'} flex flex-col`}>
+        <div className="p-8 border-b border-[#d1cdc2]">
+          <h1 className="text-2xl font-bold text-[#4a403a] flex items-center gap-2 tracking-tighter">
+            <Leaf size={24} className="text-[#739072]" /> Polyglot
           </h1>
-          <button onClick={() => setIsOpen(false)} className="md:hidden text-[#8c8279] hover:text-[#5f7161]">
-            <X size={24} />
-          </button>
         </div>
-        
-        <nav className="p-4 space-y-2 flex-1">
+        <nav className="p-4 space-y-2 flex-1 mt-4">
           {menuItems.map((item) => (
             <button
               key={item.id}
               onClick={() => { setActiveTab(item.id); setIsOpen(false); }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+              className={`w-full flex items-center space-x-3 px-4 py-3.5 rounded-xl transition-all ${
                 activeTab === item.id 
-                  ? 'bg-[#e2e0d6] dark:bg-[#3e3b36] text-[#4a403a] dark:text-[#e8e6e3] font-semibold shadow-sm' 
-                  : 'text-[#786b59] dark:text-[#a8a29e] hover:bg-[#ebe9e1] dark:hover:bg-[#353330] hover:text-[#5f7161]'
+                  ? 'bg-[#739072] text-white shadow-md' 
+                  : 'text-[#786b59] hover:bg-[#e6e2d3] hover:text-[#4a403a]'
               }`}
             >
               {item.icon}
-              <span>{item.label}</span>
+              <span className="font-bold">{item.label}</span>
             </button>
           ))}
         </nav>
-
-        {/* Footer / Friend Link */}
-        <div className="p-6 border-t border-[#e6e2d3] dark:border-[#3e3b36] text-center">
-            <a 
-              href="https://my-portfolio-beige-five-56.vercel.app/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center space-x-2 text-sm text-[#8c8279] hover:text-[#739072] transition-colors font-medium"
-            >
+        <div className="p-6 border-t border-[#d1cdc2] text-center">
+            <a href="https://my-portfolio-beige-five-56.vercel.app/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center space-x-2 text-sm text-[#8c8279] hover:text-[#739072] transition-colors font-bold uppercase tracking-widest">
               <span>千葉２狗 🐶</span>
             </a>
         </div>
@@ -85,129 +169,190 @@ const Sidebar = ({
   );
 };
 
-// 2. Generator Component
-const Generator = ({ onArticleGenerated }: { onArticleGenerated: (a: Article) => void }) => {
+// --- 2. WorldPress Component ---
+const WorldPress = ({ onArticleGenerated }: any) => {
+  const [selectedProvider, setSelectedProvider] = useState<NewsProvider | null>(null);
+  const [headlines, setHeadlines] = useState<NewsHeadline[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [processingArticle, setProcessingArticle] = useState<string | null>(null);
+  const [filter, setFilter] = useState<string>('All');
+
+  const categories = ['All', 'News', 'Finance', 'Tech', 'Fashion', 'Culture', 'Science', 'Travel', 'Food', 'Gaming', 'Design', 'Sports'];
+  const filteredProviders = filter === 'All' ? NEWS_PROVIDERS : NEWS_PROVIDERS.filter(p => p.category === filter);
+
+  const fetchHeadlines = async (provider: NewsProvider) => {
+    setLoading(true);
+    setHeadlines([]);
+    setSelectedProvider(provider);
+    try {
+      const results = await GeminiService.fetchLatestHeadlines(provider.url);
+      setHeadlines(results);
+    } catch (e) { alert("Failed to fetch news."); } finally { setLoading(false); }
+  };
+
+  const handleHeadlineClick = async (headline: NewsHeadline) => {
+    if (!selectedProvider) return;
+    setProcessingArticle(headline.title);
+    try {
+      const content = await GeminiService.processNewsArticle(headline, selectedProvider.name);
+      const newArticle: Article = { id: `news-${Date.now()}`, createdAt: Date.now(), ...content };
+      StorageService.saveArticle(newArticle);
+      onArticleGenerated(newArticle);
+    } catch (e) { alert("Failed to process article."); } finally { setProcessingArticle(null); }
+  };
+
+  return (
+    <div className="p-6 md:p-12 max-w-6xl mx-auto animate-in fade-in duration-500">
+      {!selectedProvider ? (
+        <>
+          <div className="flex flex-col mb-10">
+            <h2 className="text-4xl font-bold text-[#4a403a] mb-2 tracking-tight">World Press</h2>
+            <p className="text-[#8c8279] font-medium">Study with global prestige media in real-time.</p>
+          </div>
+          
+          <div className="flex gap-2 mb-10 overflow-x-auto pb-4 no-scrollbar">
+             {categories.map(cat => (
+               <button 
+                 key={cat} 
+                 onClick={() => setFilter(cat)} 
+                 className={`px-5 py-2 rounded-full text-xs font-bold border-2 transition-all whitespace-nowrap ${
+                   filter === cat 
+                   ? 'bg-[#739072] text-white border-[#739072]' 
+                   : 'bg-white text-[#786b59] border-[#e6e2d3] hover:border-[#739072]'
+                 }`}
+               >
+                 {cat}
+               </button>
+             ))}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredProviders.map((provider) => (
+              <div 
+                key={provider.id} 
+                onClick={() => fetchHeadlines(provider)} 
+                className="bg-white p-6 rounded-2xl border border-[#e6e2d3] hover:border-[#739072] transition-all cursor-pointer flex flex-col h-full group"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex gap-2">
+                    <span className="text-[9px] font-bold text-[#739072] border border-[#739072] px-2 py-0.5 rounded-full uppercase">{provider.region}</span>
+                    <span className="text-[9px] font-bold text-[#8c8279] border border-[#d1cdc2] px-2 py-0.5 rounded-full uppercase">{provider.category}</span>
+                  </div>
+                  <Newspaper size={18} className="text-[#d1cdc2] group-hover:text-[#739072] transition-colors" />
+                </div>
+                <h3 className="text-xl font-bold text-[#4a403a] mb-2 leading-tight group-hover:text-[#739072]">{provider.name}</h3>
+                <p className="text-sm text-[#8c8279] mb-4 line-clamp-2 leading-relaxed">{provider.description}</p>
+                <div className="text-[10px] font-mono mt-auto pt-4 border-t border-[#f0efeb] text-[#b5b0a8]">{provider.url}</div>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div>
+           <div className="flex items-center justify-between mb-8">
+             <button onClick={() => setSelectedProvider(null)} className="font-bold text-[#739072] bg-[#f3f1eb] px-5 py-2 rounded-full hover:bg-[#e6e2d3] transition-colors">
+               ← Publishers
+             </button>
+             <button onClick={() => fetchHeadlines(selectedProvider)} disabled={loading} className="p-2 bg-white border border-[#d1cdc2] rounded-full text-[#739072] hover:bg-[#f3f1eb] transition-all disabled:opacity-50">
+               <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
+             </button>
+           </div>
+           <h2 className="text-4xl font-bold text-[#4a403a] mb-8 border-b-2 border-[#d1cdc2] pb-4">{selectedProvider.name}</h2>
+           {loading ? (
+             <div className="py-24 text-center font-bold text-[#739072] animate-pulse">SYNCHRONIZING WITH AI AGENT...</div>
+           ) : (
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+               {headlines.map((headline, idx) => (
+                 <div key={idx} onClick={() => handleHeadlineClick(headline)} className="bg-white p-8 rounded-3xl border border-[#e6e2d3] hover:border-[#739072] cursor-pointer group transition-all">
+                   <h4 className="text-2xl font-bold text-[#4a403a] mb-4 leading-tight group-hover:text-[#739072]">{headline.title}</h4>
+                   <p className="text-[#8c8279] line-clamp-3 mb-6 leading-relaxed">{headline.snippet}</p>
+                   <div className="text-sm font-bold text-[#739072] uppercase flex items-center gap-2 tracking-widest"><Sparkles size={16} /> AI Study Ready</div>
+                 </div>
+               ))}
+             </div>
+           )}
+        </div>
+      )}
+      {processingArticle && (
+        <div className="fixed inset-0 bg-[#efebe0]/95 z-[100] flex flex-col items-center justify-center p-8 text-center backdrop-blur-md">
+          <div className="w-20 h-20 border-4 border-[#739072] border-t-transparent rounded-full animate-spin mb-8"></div>
+          <h3 className="text-3xl font-bold text-[#4a403a] mb-2">Analyzing Content</h3>
+          <p className="text-[#8c8279] font-medium">Extracting text and generating trilingual annotations...</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- 3. Generator Component ---
+const Generator = ({ onArticleGenerated }: any) => {
   const [topic, setTopic] = useState('');
   const [genre, setGenre] = useState<Genre>(Genre.DailyLife);
   const [difficulty, setDifficulty] = useState<Difficulty>(Difficulty.Intermediate);
-  const [length, setLength] = useState<ArticleLength>(ArticleLength.Short);
+  const [length, setLength] = useState<ArticleLength>(ArticleLength.Medium);
   const [loading, setLoading] = useState(false);
 
   const handleGenerate = async () => {
     setLoading(true);
     try {
       const content = await GeminiService.generateArticleContent(topic, genre, difficulty, length);
-      const newArticle: Article = {
-        id: Date.now().toString(),
-        createdAt: Date.now(),
-        genre,
-        difficulty,
-        ...content
-      };
+      const newArticle: Article = { id: Date.now().toString(), createdAt: Date.now(), genre, difficulty, ...content };
       StorageService.saveArticle(newArticle);
       onArticleGenerated(newArticle);
-    } catch (e) {
-      alert("Failed to generate article. Please check your API key and try again.");
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { alert("Generation failed."); } finally { setLoading(false); }
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 md:p-12">
-      <h2 className="text-3xl font-bold mb-8 text-[#4a403a] dark:text-[#e8e6e3] tracking-tight">Generate Study Material</h2>
+    <div className="max-w-4xl mx-auto p-6 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="mb-12">
+        <h2 className="text-4xl font-bold text-[#4a403a] mb-2">AI Generator</h2>
+        <p className="text-[#8c8279] font-medium">Create custom trilingual learning material in seconds.</p>
+      </div>
       
-      <div className="space-y-8 bg-[#fffefb] dark:bg-[#2c2a27] p-8 rounded-2xl shadow-sm border border-[#e6e2d3] dark:border-[#3e3b36]">
-        <div>
-          <label className="block text-sm font-bold text-[#786b59] dark:text-[#a8a29e] mb-2 uppercase tracking-wide">Topic (Optional)</label>
-          <input
-            type="text"
-            className="w-full px-4 py-3 rounded-xl border border-[#e6e2d3] dark:border-[#3e3b36] bg-[#faf9f6] dark:bg-[#353330] text-[#4a403a] dark:text-[#e8e6e3] focus:ring-2 focus:ring-[#739072] outline-none transition placeholder-[#b5b0a8]"
-            placeholder="e.g., A trip to Kyoto, The future of AI, Cooking Ramen"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
+      <div className="space-y-10 bg-white p-10 rounded-3xl border border-[#e6e2d3]">
+        <div className="space-y-3">
+          <label className="block text-sm font-bold text-[#739072] uppercase tracking-widest">Article Topic</label>
+          <input 
+            type="text" 
+            placeholder="e.g. A mysterious journey in Hokkaido or The future of AI" 
+            className="w-full px-6 py-5 rounded-2xl border-2 border-[#f3f1eb] bg-[#fcfcfc] outline-none font-bold text-[#4a403a] focus:border-[#739072] transition-all text-lg" 
+            value={topic} 
+            onChange={(e) => setTopic(e.target.value)} 
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-6">
-           {/* Row 1: Genre & Difficulty */}
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-bold text-[#786b59] dark:text-[#a8a29e] mb-2 uppercase tracking-wide">Genre</label>
-                <div className="relative">
-                    <select 
-                    className="w-full px-4 py-3 rounded-xl border border-[#e6e2d3] dark:border-[#3e3b36] bg-[#faf9f6] dark:bg-[#353330] text-[#4a403a] dark:text-[#e8e6e3] outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-[#739072]"
-                    value={genre}
-                    onChange={(e) => setGenre(e.target.value as Genre)}
-                    >
-                    {Object.values(Genre).map(g => <option key={g} value={g}>{g}</option>)}
-                    </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-[#8c8279]">
-                        <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path></svg>
-                    </div>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-[#786b59] dark:text-[#a8a29e] mb-2 uppercase tracking-wide">Difficulty</label>
-                <div className="relative">
-                    <select 
-                    className="w-full px-4 py-3 rounded-xl border border-[#e6e2d3] dark:border-[#3e3b36] bg-[#faf9f6] dark:bg-[#353330] text-[#4a403a] dark:text-[#e8e6e3] outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-[#739072]"
-                    value={difficulty}
-                    onChange={(e) => setDifficulty(e.target.value as Difficulty)}
-                    >
-                    {Object.values(Difficulty).map(d => <option key={d} value={d}>{d}</option>)}
-                    </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-[#8c8279]">
-                        <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path></svg>
-                    </div>
-                </div>
-              </div>
-           </div>
-
-           {/* Row 2: Length */}
-           <div>
-              <label className="block text-sm font-bold text-[#786b59] dark:text-[#a8a29e] mb-2 uppercase tracking-wide">Article Length</label>
-              <div className="relative">
-                  <select 
-                  className="w-full px-4 py-3 rounded-xl border border-[#e6e2d3] dark:border-[#3e3b36] bg-[#faf9f6] dark:bg-[#353330] text-[#4a403a] dark:text-[#e8e6e3] outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-[#739072]"
-                  value={length}
-                  onChange={(e) => setLength(e.target.value as ArticleLength)}
-                  >
-                  {Object.values(ArticleLength).map(l => <option key={l} value={l}>{l}</option>)}
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-[#8c8279]">
-                      <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path></svg>
-                  </div>
-              </div>
-           </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <div className="space-y-3">
+            <label className="block text-sm font-bold text-[#739072] uppercase tracking-widest">Genre</label>
+            <select className="w-full px-6 py-4 rounded-xl border-2 border-[#f3f1eb] bg-[#fcfcfc] outline-none font-bold text-[#4a403a] appearance-none cursor-pointer hover:border-[#d1cdc2]" value={genre} onChange={(e) => setGenre(e.target.value as Genre)}>
+              {Object.values(Genre).map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
+          </div>
+          <div className="space-y-3">
+            <label className="block text-sm font-bold text-[#739072] uppercase tracking-widest">Level</label>
+            <select className="w-full px-6 py-4 rounded-xl border-2 border-[#f3f1eb] bg-[#fcfcfc] outline-none font-bold text-[#4a403a] appearance-none cursor-pointer hover:border-[#d1cdc2]" value={difficulty} onChange={(e) => setDifficulty(e.target.value as Difficulty)}>
+              {Object.values(Difficulty).map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
         </div>
 
-        <button
-          onClick={handleGenerate}
-          disabled={loading}
-          className={`w-full py-4 rounded-xl font-bold text-white transition-all shadow-sm ${
-            loading 
-              ? 'bg-[#b5b0a8] cursor-not-allowed' 
-              : 'bg-[#739072] hover:bg-[#5f7161] hover:shadow-md transform hover:-translate-y-0.5'
-          }`}
-        >
-          {loading ? (
-            <span className="flex items-center justify-center space-x-2">
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <span>Writing...</span>
-            </span>
-          ) : 'Generate Article'}
+        <div className="space-y-3">
+            <label className="block text-sm font-bold text-[#739072] uppercase tracking-widest">Article Length</label>
+            <select className="w-full px-6 py-4 rounded-xl border-2 border-[#f3f1eb] bg-[#fcfcfc] outline-none font-bold text-[#4a403a] appearance-none cursor-pointer hover:border-[#d1cdc2]" value={length} onChange={(e) => setLength(e.target.value as ArticleLength)}>
+              {Object.values(ArticleLength).map(l => <option key={l} value={l}>{l}</option>)}
+            </select>
+        </div>
+
+        <button onClick={handleGenerate} disabled={loading} className="w-full py-6 bg-[#739072] text-white font-bold text-xl rounded-2xl hover:bg-[#5f7161] shadow-lg transition-all disabled:bg-[#d1cdc2] uppercase tracking-widest">
+          {loading ? 'Manifesting Story...' : 'Generate Article'}
         </button>
       </div>
     </div>
   );
 };
 
-// 3. Manual Input Component
-const ManualInput = ({ onArticleGenerated }: { onArticleGenerated: (a: Article) => void }) => {
+// --- 4. Manual Input Component ---
+const ManualInput = ({ onArticleGenerated }: any) => {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -216,68 +361,37 @@ const ManualInput = ({ onArticleGenerated }: { onArticleGenerated: (a: Article) 
     setLoading(true);
     try {
       const content = await GeminiService.parseManualInput(text);
-      const newArticle: Article = {
-        id: Date.now().toString(),
-        createdAt: Date.now(),
-        genre: 'Custom',
-        difficulty: 'Manual',
-        ...content
-      };
+      const newArticle: Article = { id: Date.now().toString(), createdAt: Date.now(), genre: 'Custom', difficulty: 'Manual', ...content };
       StorageService.saveArticle(newArticle);
       onArticleGenerated(newArticle);
-    } catch (e) {
-      alert("Failed to process text.");
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { alert("Parsing failed."); } finally { setLoading(false); }
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 md:p-12">
-      <h2 className="text-3xl font-bold mb-8 text-[#4a403a] dark:text-[#e8e6e3] tracking-tight">Manual Input</h2>
-      <div className="bg-[#fffefb] dark:bg-[#2c2a27] p-8 rounded-2xl shadow-sm border border-[#e6e2d3] dark:border-[#3e3b36]">
-        <p className="mb-4 text-[#786b59] dark:text-[#a8a29e] text-sm">
-          Paste any text. We'll format it, add readings, and translate it for you.
-        </p>
-        <textarea
-          className="w-full h-48 p-4 rounded-xl border border-[#e6e2d3] dark:border-[#3e3b36] bg-[#faf9f6] dark:bg-[#353330] text-[#4a403a] dark:text-[#e8e6e3] focus:ring-2 focus:ring-[#739072] outline-none resize-none mb-6 placeholder-[#b5b0a8]"
-          placeholder="Paste Japanese, Chinese, or English text here..."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
+    <div className="max-w-4xl mx-auto p-6 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <h2 className="text-4xl font-bold text-[#4a403a] mb-8 tracking-tight">Manual Input</h2>
+      <div className="bg-white p-10 rounded-3xl border border-[#e6e2d3] space-y-6">
+        <textarea 
+          placeholder="Paste foreign text here to analyze..." 
+          className="w-full h-64 p-6 rounded-2xl border-2 border-[#f3f1eb] bg-[#fcfcfc] outline-none font-medium text-[#1a1a1a] resize-none focus:border-[#739072] transition-all text-lg" 
+          value={text} 
+          onChange={(e) => setText(e.target.value)} 
         />
-        <button
-          onClick={handleParse}
-          disabled={loading || !text.trim()}
-          className={`w-full py-4 rounded-xl font-bold text-white transition-all ${
-            loading || !text.trim()
-              ? 'bg-[#b5b0a8] cursor-not-allowed' 
-              : 'bg-[#8f5e5e] hover:bg-[#7a4f4f] shadow-sm hover:shadow-md'
-          }`}
-        >
-          {loading ? 'Analyzing...' : 'Process & Learn'}
+        <button onClick={handleParse} disabled={loading || !text.trim()} className="w-full py-5 bg-[#8f5e5e] text-white font-bold text-lg rounded-2xl hover:bg-[#7a4f4f] transition-all uppercase tracking-widest">
+          {loading ? 'Processing...' : 'Deep Analyze Text'}
         </button>
       </div>
     </div>
   );
 };
 
-// 4. Reader Component
-const Reader = ({ 
-    article, 
-    onBack,
-    onUpdate
-}: { 
-    article: Article, 
-    onBack: () => void,
-    onUpdate: (updatedArticle: Article) => void
-}) => {
+// --- 5. Reader Component ---
+const Reader = ({ article, onBack, onUpdate }: any) => {
   const [selectedSentence, setSelectedSentence] = useState<Sentence | null>(null);
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [showRuby, setShowRuby] = useState(true);
-  const [fontSizeLevel, setFontSizeLevel] = useState(1); // 0 = sm, 1 = normal, 2 = lg, 3 = xl, 4 = xxl
-  
-  // Continuation State
+  const [fontSizeLevel, setFontSizeLevel] = useState(1);
   const [continuationPrompt, setContinuationPrompt] = useState("");
   const [isExtending, setIsExtending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -301,289 +415,173 @@ const Reader = ({
     setIsExtending(true);
     try {
         const newSentences = await GeminiService.continueArticleContent(article, continuationPrompt);
-        const updatedArticle: Article = {
-            ...article,
-            sentences: [...article.sentences, ...newSentences]
-        };
-        
-        // Update via parent callback
-        onUpdate(updatedArticle);
-        
-        // Clear prompt
+        onUpdate({ ...article, sentences: [...article.sentences, ...newSentences] });
         setContinuationPrompt("");
-        
-        // Scroll to new content after a brief delay for render
-        setTimeout(() => {
-             scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, 300);
+        setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 300);
+    } catch (e) { alert("Extension failed."); } finally { setIsExtending(false); }
+  }
 
-    } catch (e) {
-        alert("Could not extend the story. Please try again.");
-    } finally {
-        setIsExtending(false);
+  const getFontSizeClass = (level: number) => {
+      switch(level) {
+          case 0: return "text-lg";
+          case 1: return "text-xl"; 
+          case 2: return "text-2xl";
+          case 3: return "text-3xl";
+          case 4: return "text-4xl leading-snug";
+          case 5: return "text-5xl leading-tight"; // Enhanced for high-scale titles
+          default: return level > 5 ? "text-5xl" : "text-xl";
+      }
+  }
+
+  const getSecondaryFontSizeClass = (level: number) => {
+    switch(level) {
+        case 0: return "text-base";
+        case 1: return "text-lg"; 
+        case 2: return "text-xl";
+        case 3: return "text-2xl";
+        case 4: return "text-3xl font-bold";
+        default: return "text-lg";
     }
   }
 
-  // Font Size Classes - Updated for better visibility on E-ink
-  const getFontSizeClass = (level: number) => {
-      switch(level) {
-          case 0: return "text-lg md:text-xl";
-          case 1: return "text-xl md:text-2xl"; // Default
-          case 2: return "text-2xl md:text-3xl";
-          case 3: return "text-3xl md:text-4xl";
-          case 4: return "text-4xl md:text-5xl leading-tight";
-          default: return "text-xl md:text-2xl";
-      }
-  }
-
-  const getZhFontSizeClass = (level: number) => {
-      switch(level) {
-          case 0: return "text-lg"; // Was text-base
-          case 1: return "text-xl"; // Was text-lg
-          case 2: return "text-2xl";
-          case 3: return "text-3xl";
-          case 4: return "text-4xl";
-          default: return "text-xl";
-      }
-  }
-
-  const getEnFontSizeClass = (level: number) => {
-      switch(level) {
-          case 0: return "text-base"; // Was text-sm
-          case 1: return "text-lg";   // Was text-base
-          case 2: return "text-xl";
-          case 3: return "text-2xl";
-          case 4: return "text-3xl";
-          default: return "text-lg";
-      }
+  const getEnglishFontSizeClass = (level: number) => {
+    switch(level) {
+        case 0: return "text-lg";
+        case 1: return "text-xl font-bold"; 
+        case 2: return "text-2xl font-bold";
+        case 3: return "text-3xl font-black";
+        case 4: return "text-4xl font-black leading-tight";
+        default: return "text-xl font-bold";
+    }
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden relative bg-[#faf9f6] dark:bg-[#201e1c]">
-      {/* Top Bar - Mori Style */}
-      <div className="flex items-center justify-between px-6 py-4 bg-[#fffefb] dark:bg-[#2c2a27] border-b border-[#e6e2d3] dark:border-[#3e3b36] shrink-0 z-10 shadow-sm">
+    <div className="flex flex-col h-full bg-[#efebe0] text-[#1a1a1a]">
+      {/* Reader Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-[#d1cdc2] bg-[#f3f1eb] shrink-0 z-10 shadow-sm">
         <div className="flex items-center space-x-4">
-            <button onClick={onBack} className="p-2 hover:bg-[#f3f1eb] dark:hover:bg-[#3e3b36] rounded-full transition-colors">
-                <X size={22} className="text-[#8c8279] dark:text-[#a8a29e]"/>
-            </button>
-            <h2 className="font-bold text-[#4a403a] dark:text-[#e8e6e3] truncate max-w-xs md:max-w-md text-lg hidden sm:block">
-                {showRuby && article.title.ja_ruby ? (
-                     <span dangerouslySetInnerHTML={{__html: article.title.ja_ruby}} />
-                ) : article.title.ja}
+            <button onClick={onBack} className="p-2 bg-white border border-[#d1cdc2] rounded-full hover:bg-[#e6e2d3] transition-colors"><X size={20} /></button>
+            <h2 className="font-bold text-[#4a403a] truncate max-w-xs md:max-w-md">
+               {article.title.ja}
             </h2>
         </div>
         <div className="flex items-center space-x-3">
-           {/* Font Size Control */}
-           <div className="flex items-center space-x-1 border border-[#e6e2d3] dark:border-[#3e3b36] rounded-lg p-1 bg-[#fffefb] dark:bg-[#2c2a27] mr-2">
-                <button 
-                    onClick={() => setFontSizeLevel(Math.max(0, fontSizeLevel - 1))}
-                    disabled={fontSizeLevel === 0}
-                    className="p-1 text-[#8c8279] hover:text-[#4a403a] disabled:opacity-30 transition-colors"
-                >
-                    <Type size={14} />
-                </button>
-                <span className="text-xs w-4 text-center font-mono text-[#4a403a] dark:text-[#a8a29e]">{fontSizeLevel + 1}</span>
-                <button 
-                    onClick={() => setFontSizeLevel(Math.min(4, fontSizeLevel + 1))}
-                    disabled={fontSizeLevel === 4}
-                    className="p-1 text-[#8c8279] hover:text-[#4a403a] disabled:opacity-30 transition-colors"
-                >
-                    <Type size={20} />
-                </button>
+           <div className="flex items-center space-x-1 border border-[#d1cdc2] rounded-full p-1 bg-white">
+                <button onClick={() => setFontSizeLevel(Math.max(0, fontSizeLevel - 1))} className="p-2 hover:bg-[#f3f1eb] rounded-full"><Type size={14}/></button>
+                <button onClick={() => setFontSizeLevel(Math.min(4, fontSizeLevel + 1))} className="p-2 hover:bg-[#f3f1eb] rounded-full"><Type size={20}/></button>
            </div>
-
-           <button 
-             onClick={() => setShowRuby(!showRuby)} 
-             className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors ${showRuby ? 'bg-[#4a403a] text-[#f3f1eb] border-[#4a403a]' : 'bg-transparent text-[#8c8279] border-[#d4d0c7] hover:border-[#8c8279]'}`}
-           >
-             RUBY {showRuby ? 'ON' : 'OFF'}
-           </button>
-           <button 
-             onClick={() => StorageService.exportToCSV(article)}
-             className="p-2 text-[#8c8279] hover:text-[#4a403a] hover:bg-[#f3f1eb] dark:hover:bg-[#3e3b36] rounded-full transition-colors" title="Export CSV">
-             <Download size={20} />
-           </button>
+           <button onClick={() => setShowRuby(!showRuby)} className={`px-4 py-2 text-xs font-bold rounded-full border ${showRuby ? 'bg-[#739072] text-white border-[#739072]' : 'text-[#739072] border-[#739072] hover:bg-[#f3f1eb]'}`}>RUBY</button>
+           <button onClick={() => StorageService.exportToCSV(article)} className="p-2 bg-white border border-[#d1cdc2] rounded-full text-[#739072]"><Download size={20}/></button>
         </div>
       </div>
 
       <div className="flex flex-1 overflow-hidden relative">
-        {/* Main Text Area */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-12 space-y-8 pb-24">
-            
-            <div className="mb-10 text-center space-y-3">
-                <h1 className="text-2xl md:text-4xl font-bold text-[#4a403a] dark:text-[#e8e6e3] leading-tight">
-                    {showRuby && article.title.ja_ruby ? (
-                        <span dangerouslySetInnerHTML={{__html: article.title.ja_ruby}} />
-                    ) : article.title.ja}
+        <div className="flex-1 overflow-y-auto p-4 md:p-12 space-y-20 pb-32">
+            {/* Article Heading */}
+            <div className="max-w-4xl mx-auto text-center space-y-12 border-b border-[#e6e2d3] pb-16">
+                <h1 className={`font-bold leading-tight ${getFontSizeClass(fontSizeLevel + 1)} transition-all duration-200`}>
+                    {showRuby && article.title.ja_ruby ? <span dangerouslySetInnerHTML={{__html: article.title.ja_ruby}} /> : article.title.ja}
                 </h1>
-                <p className="text-xl text-[#786b59] dark:text-[#a8a29e] font-medium">{article.title.zh}</p>
-                <p className="text-md text-[#8c8279] dark:text-[#786b59] italic serif">{article.title.en}</p>
-                <div className="flex justify-center gap-3 mt-4">
-                    <span className="text-xs px-3 py-1 bg-[#e9edc9] dark:bg-[#3e3b36] rounded-full text-[#5f7161] dark:text-[#a8a29e] font-semibold">{article.difficulty}</span>
-                    <span className="text-xs px-3 py-1 bg-[#e9edc9] dark:bg-[#3e3b36] rounded-full text-[#5f7161] dark:text-[#a8a29e] font-semibold">{article.genre}</span>
+                <div className="space-y-10">
+                    <p className={`font-medium text-[#786b59] ${getSecondaryFontSizeClass(fontSizeLevel)}`}>{article.title.zh}</p>
+                    <p className={`text-[#1a1a1a] ${getEnglishFontSizeClass(fontSizeLevel)}`}>{article.title.en}</p>
                 </div>
             </div>
 
-            <div className="space-y-4 max-w-3xl mx-auto">
+            {/* Content Body */}
+            <div className="space-y-12 max-w-4xl mx-auto">
                 {article.sentences.map((s) => (
                     <div 
-                        key={s.id}
-                        onClick={() => { setSelectedSentence(s); setAnalysis(null); }}
-                        className={`p-6 rounded-2xl transition-all cursor-pointer border ${
-                            selectedSentence?.id === s.id 
-                            ? 'bg-[#f0efeb] dark:bg-[#3e3b36] border-[#b5b0a8] dark:border-[#5c5954] shadow-md transform scale-[1.01]' 
-                            : 'bg-[#fffefb] dark:bg-[#2c2a27] border-transparent shadow-sm hover:shadow-md hover:border-[#e6e2d3]'
-                        }`}
+                      key={s.id} 
+                      onClick={() => { setSelectedSentence(s); setAnalysis(null); }} 
+                      className={`p-12 md:p-16 rounded-3xl border-2 transition-all cursor-pointer ${selectedSentence?.id === s.id ? 'bg-white border-[#739072] shadow-md' : 'bg-transparent border-transparent hover:bg-white/50 hover:border-[#e6e2d3]'}`}
                     >
-                        {/* Japanese */}
-                        <div className={`${getFontSizeClass(fontSizeLevel)} leading-relaxed text-[#272320] dark:text-[#e8e6e3] font-medium mb-3 transition-all duration-300`}>
-                           {showRuby ? (
-                               <span dangerouslySetInnerHTML={{__html: s.ja_ruby}} />
-                           ) : (
-                               <span>{s.ja}</span>
-                           )}
+                        <div className={`${getFontSizeClass(fontSizeLevel)} font-bold mb-14 leading-relaxed`}>
+                           {showRuby ? <span dangerouslySetInnerHTML={{__html: s.ja_ruby}} /> : <span>{s.ja}</span>}
                         </div>
-
-                        {/* Translations */}
-                        <div className={`space-y-2 transition-opacity duration-300 ${selectedSentence?.id === s.id ? 'opacity-100' : 'opacity-90'}`}>
-                             <p className={`text-[#3f3833] dark:text-[#b5b0a8] ${getZhFontSizeClass(fontSizeLevel)} transition-all duration-300`}>{s.zh}</p>
-                             <p className={`text-[#595048] dark:text-[#9ca3af] ${getEnFontSizeClass(fontSizeLevel)} transition-all duration-300 font-serif`}>{s.en}</p>
+                        <div className="space-y-12 border-t border-[#f3f1eb] pt-14">
+                             <p className={`${getFontSizeClass(fontSizeLevel - 1)} font-medium text-[#5c524b]`}>{s.zh}</p>
+                             <p className={`${getEnglishFontSizeClass(fontSizeLevel - 1)} text-[#1a1a1a]`}>{s.en}</p>
                         </div>
                     </div>
                 ))}
             </div>
 
-            {/* Continuation Section */}
-            <div className="max-w-3xl mx-auto pt-8 border-t border-[#e6e2d3] dark:border-[#3e3b36] mt-12">
-                 <div className="bg-[#f3f1eb] dark:bg-[#2c2a27] p-6 rounded-2xl border border-[#d4d0c7] dark:border-[#3e3b36]">
-                    <h3 className="text-lg font-bold text-[#4a403a] dark:text-[#e8e6e3] mb-3 flex items-center gap-2">
-                        <Sparkles size={18} className="text-[#739072]" /> 
-                        Continue Story
+            {/* Article Extension Section */}
+            <div className="max-w-4xl mx-auto pt-16 border-t border-[#e6e2d3]">
+                <div className="bg-white p-8 rounded-3xl border-2 border-[#f3f1eb]">
+                    <h3 className="text-xl font-bold text-[#4a403a] mb-4 flex items-center gap-2">
+                        <MessageSquarePlus size={24} className="text-[#739072]" /> Continue this Story
                     </h3>
-                    <p className="text-sm text-[#8c8279] mb-4">
-                        Want to read more? Tell AI what should happen next, or leave it blank for a surprise.
-                    </p>
                     <div className="flex flex-col md:flex-row gap-4">
-                        <textarea
-                            disabled={isExtending}
-                            value={continuationPrompt}
-                            onChange={(e) => setContinuationPrompt(e.target.value)}
-                            placeholder="e.g. They decide to go to a ramen shop..."
-                            className="flex-1 px-4 py-3 rounded-xl border border-[#e6e2d3] dark:border-[#3e3b36] bg-[#fffefb] dark:bg-[#353330] text-[#4a403a] dark:text-[#e8e6e3] focus:ring-2 focus:ring-[#739072] outline-none resize-none h-20 md:h-auto"
+                        <textarea 
+                          disabled={isExtending} 
+                          value={continuationPrompt} 
+                          onChange={(e) => setContinuationPrompt(e.target.value)} 
+                          placeholder="What happens next? (Optional: provide keywords or let AI decide...)" 
+                          className="flex-1 px-5 py-4 rounded-2xl border-2 border-[#f3f1eb] bg-[#fcfcfc] text-[#1a1a1a] outline-none h-24 focus:border-[#739072] transition-all font-medium" 
                         />
                         <button 
-                            onClick={handleExtendStory}
-                            disabled={isExtending}
-                            className={`px-6 py-3 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap ${
-                                isExtending 
-                                ? 'bg-[#b5b0a8] cursor-not-allowed' 
-                                : 'bg-[#739072] hover:bg-[#5f7161] hover:shadow-md'
-                            }`}
+                          onClick={handleExtendStory} 
+                          disabled={isExtending} 
+                          className="px-8 py-4 rounded-2xl font-bold text-white bg-[#739072] hover:bg-[#5f7161] disabled:bg-[#d1cdc2] shadow-md transition-all whitespace-nowrap self-end md:self-stretch uppercase tracking-widest text-sm"
                         >
-                            {isExtending ? (
-                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                            ) : (
-                                <>
-                                    <span>Append</span>
-                                    <Send size={18} />
-                                </>
-                            )}
+                          {isExtending ? 'Generating...' : 'Append'}
                         </button>
                     </div>
-                 </div>
-                 {/* Scroll anchor */}
-                 <div ref={scrollRef}></div>
+                </div>
             </div>
+            <div ref={scrollRef}></div>
         </div>
 
-        {/* Right Analysis Drawer - Mori Style */}
+        {/* Analysis Sidebar */}
         {selectedSentence && (
-            <div className="absolute top-0 right-0 h-full w-full md:w-[450px] bg-[#fffefb] dark:bg-[#2c2a27] border-l border-[#e6e2d3] dark:border-[#3e3b36] shadow-2xl z-40 flex flex-col animate-in slide-in-from-right duration-300">
-                
-                {/* Header */}
-                <div className="flex items-center justify-between p-5 border-b border-[#e6e2d3] dark:border-[#3e3b36] bg-[#f9f8f4] dark:bg-[#2c2a27]">
-                    <span className="font-bold text-[#5c524b] dark:text-[#e8e6e3] flex items-center gap-2">
-                        <Search size={18} className="text-[#739072]"/> Analysis
-                    </span>
-                    <button 
-                        onClick={() => setSelectedSentence(null)} 
-                        className="p-2 hover:bg-[#e6e2d3] dark:hover:bg-[#3e3b36] rounded-full text-[#8c8279] hover:text-[#5f7161] transition-colors"
-                        title="Close Analysis"
-                    >
-                        <X size={20} />
-                    </button>
+            <div className="absolute top-0 right-0 h-full w-full md:w-[480px] bg-white border-l-2 border-[#d1cdc2] z-40 flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
+                <div className="flex items-center justify-between p-6 border-b border-[#d1cdc2] bg-[#f3f1eb]">
+                    <span className="font-bold text-[#4a403a] uppercase tracking-widest flex items-center gap-2"><Search size={20} className="text-[#739072]"/> Sentence Analysis</span>
+                    <button onClick={() => setSelectedSentence(null)} className="p-2 hover:bg-white rounded-full transition-colors"><X size={20} /></button>
                 </div>
-
-                {/* Content */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-8">
-                    {/* Audio Controls */}
-                    <div className="flex justify-center space-x-8 pb-6 border-b border-[#e6e2d3] dark:border-[#3e3b36]">
-                         <button onClick={() => speak(selectedSentence.ja, 'ja-JP')} className="flex flex-col items-center text-[#786b59] hover:text-[#4a403a] dark:text-[#a8a29e] dark:hover:text-[#e8e6e3] transition-all group">
-                            <div className="p-3 bg-[#f3f1eb] dark:bg-[#3e3b36] rounded-full group-hover:bg-[#e6e2d3] dark:group-hover:bg-[#4a4742] mb-1">
-                                <PlayCircle size={24} />
-                            </div>
-                            <span className="text-[10px] font-bold tracking-wider">JP</span>
-                         </button>
-                         <button onClick={() => speak(selectedSentence.zh, 'zh-CN')} className="flex flex-col items-center text-[#786b59] hover:text-[#4a403a] dark:text-[#a8a29e] dark:hover:text-[#e8e6e3] transition-all group">
-                            <div className="p-3 bg-[#f3f1eb] dark:bg-[#3e3b36] rounded-full group-hover:bg-[#e6e2d3] dark:group-hover:bg-[#4a4742] mb-1">
-                                <PlayCircle size={24} />
-                            </div>
-                            <span className="text-[10px] font-bold tracking-wider">CN</span>
-                         </button>
-                         <button onClick={() => speak(selectedSentence.en, 'en-US')} className="flex flex-col items-center text-[#786b59] hover:text-[#4a403a] dark:text-[#a8a29e] dark:hover:text-[#e8e6e3] transition-all group">
-                            <div className="p-3 bg-[#f3f1eb] dark:bg-[#3e3b36] rounded-full group-hover:bg-[#e6e2d3] dark:group-hover:bg-[#4a4742] mb-1">
-                                <PlayCircle size={24} />
-                            </div>
-                            <span className="text-[10px] font-bold tracking-wider">EN</span>
-                         </button>
-                    </div>
-
-                    {/* Text Details */}
-                    <div className="space-y-6">
-                        <div className="p-5 bg-[#f3f1eb] dark:bg-[#3e3b36] rounded-xl border border-[#e6e2d3] dark:border-[#4a4742]">
-                             <p className="text-xs font-bold text-[#8c8279] mb-3 uppercase tracking-wide">Target (Japanese)</p>
-                             <div className="text-xl text-[#4a403a] dark:text-[#e8e6e3] leading-relaxed font-medium">
-                                 {showRuby ? <span dangerouslySetInnerHTML={{__html: selectedSentence.ja_ruby}} /> : selectedSentence.ja}
-                             </div>
+                <div className="flex-1 overflow-y-auto p-8 space-y-10">
+                    <div className="space-y-6 bg-[#faf9f6] p-6 rounded-2xl border border-[#e6e2d3]">
+                        <div className="space-y-1">
+                           <span className="text-[10px] font-bold text-[#739072] uppercase tracking-tighter">Japanese</span>
+                           <div className="text-xl font-bold leading-relaxed">
+                               {showRuby ? <span dangerouslySetInnerHTML={{__html: selectedSentence.ja_ruby}} /> : selectedSentence.ja}
+                           </div>
                         </div>
-
-                        <div className="space-y-4">
-                            <div className="pl-4 border-l-4 border-[#b5b0a8] dark:border-[#5c5954]">
-                                <p className="text-xs font-bold text-[#8c8279] mb-1 uppercase tracking-wide">Chinese Translation</p>
-                                <p className="text-[#5c524b] dark:text-[#b5b0a8] text-lg">{selectedSentence.zh}</p>
-                            </div>
-                            <div className="pl-4 border-l-4 border-[#d4d0c7] dark:border-[#4a4742]">
-                                <p className="text-xs font-bold text-[#8c8279] mb-1 uppercase tracking-wide">English Translation</p>
-                                <p className="text-[#8c8279] dark:text-[#786b59] italic font-serif">{selectedSentence.en}</p>
-                            </div>
+                        <div className="space-y-1">
+                           <span className="text-[10px] font-bold text-[#739072] uppercase tracking-tighter">Chinese</span>
+                           <p className="font-medium text-[#4a403a]">{selectedSentence.zh}</p>
+                        </div>
+                        <div className="space-y-1">
+                           <span className="text-[10px] font-bold text-[#739072] uppercase tracking-tighter">English</span>
+                           <p className="font-bold text-[#1a1a1a] leading-tight text-lg">{selectedSentence.en}</p>
                         </div>
                     </div>
 
-                    {/* AI Grammar Analysis */}
-                    <div>
+                    <div className="flex justify-around items-center border-y border-[#f3f1eb] py-4">
+                         {['ja-JP', 'zh-CN', 'en-US'].map((lang, i) => (
+                           <button 
+                             key={lang} 
+                             onClick={() => speak([selectedSentence.ja, selectedSentence.zh, selectedSentence.en][i], lang)} 
+                             className="flex flex-col items-center group"
+                           >
+                              <div className="p-3 bg-[#f3f1eb] group-hover:bg-[#739072] group-hover:text-white rounded-full mb-1 transition-all"><PlayCircle size={24} /></div>
+                              <span className="text-[10px] font-bold uppercase">{['JP','CN','EN'][i]}</span>
+                           </button>
+                         ))}
+                    </div>
+
+                    <div className="prose prose-stone max-w-none">
                          {!analysis && !analyzing ? (
-                             <button 
-                                onClick={() => handleAnalyze(selectedSentence)}
-                                className="w-full py-3 bg-[#739072] hover:bg-[#5f7161] text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all"
-                             >
-                                <Search size={18} /> Deep Analysis
-                             </button>
+                             <button onClick={() => handleAnalyze(selectedSentence)} className="w-full py-5 bg-[#739072] text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-[#5f7161] shadow-lg transition-all">Deep Analysis</button>
                          ) : (
-                             <div className="bg-[#faf9f6] dark:bg-[#353330] rounded-xl p-5 border border-[#e6e2d3] dark:border-[#3e3b36]">
-                                  {analyzing ? (
-                                      <div className="flex flex-col items-center justify-center py-8 text-[#8c8279] space-y-3">
-                                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#739072]"></div>
-                                          <span className="text-sm font-medium">Consulting Sensei...</span>
-                                      </div>
-                                  ) : (
-                                      <div className="prose prose-stone prose-sm dark:prose-invert max-w-none">
-                                          <h4 className="text-sm font-bold text-[#8c8279] uppercase mb-3 border-b border-[#e6e2d3] dark:border-[#3e3b36] pb-2">Sensei's Notes</h4>
-                                          <ReactMarkdown>{analysis || ''}</ReactMarkdown>
-                                      </div>
-                                  )}
+                             <div className="text-[#1a1a1a] leading-relaxed">
+                                  {analyzing ? <div className="animate-pulse flex flex-col gap-4">
+                                      <div className="h-4 bg-[#f3f1eb] rounded w-3/4"></div>
+                                      <div className="h-4 bg-[#f3f1eb] rounded w-full"></div>
+                                      <div className="h-4 bg-[#f3f1eb] rounded w-5/6"></div>
+                                  </div> : <ReactMarkdown>{analysis || ''}</ReactMarkdown>}
                              </div>
                          )}
                     </div>
@@ -595,128 +593,75 @@ const Reader = ({
   );
 };
 
-// 5. Library Component
-const LibraryView = ({ onSelect }: { onSelect: (a: Article) => void }) => {
+// --- 6. Library Component ---
+const LibraryView = ({ onSelect }: any) => {
   const [articles, setArticles] = useState<Article[]>([]);
-
-  useEffect(() => {
-    setArticles(StorageService.getSavedArticles());
-  }, []);
-
+  useEffect(() => { setArticles(StorageService.getSavedArticles()); }, []);
   const handleDelete = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if(confirm("Are you sure you want to delete this article?")) {
+    if(confirm("Permanently delete this article from your library?")) {
         StorageService.deleteArticle(id);
         setArticles(StorageService.getSavedArticles());
     }
   }
-
-  if (articles.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-[#b5b0a8]">
-        <Library size={64} className="mb-4 opacity-30" />
-        <p className="text-xl font-medium mb-1">Empty Library</p>
-        <p className="text-sm">Create content using the AI Generator.</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-6 md:p-12 max-w-5xl mx-auto">
-      <h2 className="text-3xl font-bold mb-8 text-[#4a403a] dark:text-[#e8e6e3] tracking-tight">My Library</h2>
+    <div className="p-6 md:p-12 max-w-6xl mx-auto animate-in fade-in duration-500">
+      <h2 className="text-4xl font-bold text-[#4a403a] mb-10 tracking-tight">My Library</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {articles.map((article) => (
-          <div 
-            key={article.id}
-            onClick={() => onSelect(article)}
-            className="group bg-[#fffefb] dark:bg-[#2c2a27] p-6 rounded-2xl border border-[#e6e2d3] dark:border-[#3e3b36] hover:shadow-lg hover:border-[#d4d0c7] transition-all cursor-pointer relative"
-          >
-            <div className="flex justify-between items-start mb-3">
-                <span className="text-xs font-bold px-3 py-1 bg-[#f0efeb] dark:bg-[#3e3b36] text-[#786b59] dark:text-[#a8a29e] rounded-full uppercase tracking-wider">
-                    {article.difficulty.split(' ')[0]}
-                </span>
-                <span className="text-xs text-[#b5b0a8] font-mono">
-                    {new Date(article.createdAt).toLocaleDateString()}
-                </span>
+        {articles.length > 0 ? articles.map((article) => (
+          <div key={article.id} onClick={() => onSelect(article)} className="bg-white p-8 rounded-3xl border border-[#e6e2d3] hover:border-[#739072] cursor-pointer relative group transition-all">
+            <h3 className="text-2xl font-bold text-[#4a403a] mb-2 truncate group-hover:text-[#739072]">{article.title.ja}</h3>
+            <p className="text-sm font-bold text-[#8c8279] mb-4 truncate">{article.title.en}</p>
+            <div className="flex items-center gap-3">
+                <span className="text-[10px] font-bold border border-[#d1cdc2] px-3 py-1 rounded-full uppercase text-[#b5b0a8]">{article.genre}</span>
+                <span className="text-[10px] font-bold text-[#b5b0a8]">{article.sentences.length} Sentences</span>
             </div>
-            <h3 className="text-xl font-bold text-[#4a403a] dark:text-[#e8e6e3] mb-2 line-clamp-1 group-hover:text-[#739072] transition-colors">{article.title.ja}</h3>
-            <p className="text-sm text-[#8c8279] dark:text-[#a8a29e] line-clamp-1 mb-3 italic">{article.title.en}</p>
-            <p className="text-xs text-[#b5b0a8] font-medium">{article.sentences.length} Sentences • {article.genre}</p>
-            
-            <button 
-                onClick={(e) => handleDelete(e, article.id)}
-                className="absolute bottom-6 right-6 p-2 text-[#d4d0c7] hover:text-[#8f5e5e] hover:bg-[#f3f1eb] dark:hover:bg-[#3e3b36] rounded-full transition-all opacity-0 group-hover:opacity-100"
-            >
-                <Trash2 size={18} />
-            </button>
+            <button onClick={(e) => handleDelete(e, article.id)} className="absolute top-6 right-6 p-2 text-[#d1cdc2] hover:text-[#8f5e5e] transition-colors"><Trash2 size={20} /></button>
           </div>
-        ))}
+        )) : (
+            <div className="col-span-full py-32 text-center border-2 border-dashed border-[#d1cdc2] rounded-3xl bg-white/50">
+                <Library size={64} className="mx-auto text-[#d1cdc2] mb-6" />
+                <p className="text-xl font-bold text-[#8c8279]">Your collection is empty.</p>
+                <p className="text-[#b5b0a8]">Generate an article or input text to get started.</p>
+            </div>
+        )}
       </div>
     </div>
   );
 };
 
-// Main App Container
 export default function App() {
-  const [activeTab, setActiveTab] = useState('generate');
+  const [activeTab, setActiveTab] = useState('press');
   const [currentArticle, setCurrentArticle] = useState<Article | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleArticleCreated = (article: Article) => {
-    setCurrentArticle(article);
-  };
-
+  const handleArticleCreated = (article: Article) => { setCurrentArticle(article); };
   const handleArticleUpdated = (updatedArticle: Article) => {
     setCurrentArticle(updatedArticle);
     StorageService.saveArticle(updatedArticle);
   };
 
-  const handleBackToMenu = () => {
-      setCurrentArticle(null);
-  }
-
-  // If reading an article, show Reader regardless of tab (simplified nav)
   if (currentArticle) {
       return (
-          <div className="h-screen bg-[#faf9f6] dark:bg-[#201e1c] text-[#4a403a] dark:text-[#e8e6e3]">
-             <Reader 
-                article={currentArticle} 
-                onBack={handleBackToMenu} 
-                onUpdate={handleArticleUpdated}
-             />
-          </div>
-      )
+        <div className="h-screen bg-[#efebe0]">
+          <Reader article={currentArticle} onBack={() => setCurrentArticle(null)} onUpdate={handleArticleUpdated} />
+        </div>
+      );
   }
 
   return (
-    <div className="flex h-screen bg-[#faf9f6] dark:bg-[#201e1c] text-[#4a403a] dark:text-[#e8e6e3] overflow-hidden font-sans selection:bg-[#dce2d3] selection:text-[#4a403a]">
-      <Sidebar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        isOpen={sidebarOpen}
-        setIsOpen={setSidebarOpen}
-      />
-      
+    <div className="flex h-screen bg-[#efebe0] text-[#1a1a1a] overflow-hidden font-sans">
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
       <div className="flex-1 flex flex-col md:ml-64 transition-all duration-300">
-        {/* Header (Mobile) */}
-        <div className="md:hidden flex items-center p-4 bg-[#fffefb] dark:bg-[#2c2a27] border-b border-[#e6e2d3] dark:border-[#3e3b36]">
-            <button onClick={() => setSidebarOpen(true)} className="p-2 mr-2 text-[#786b59]">
-                <Menu size={24} />
-            </button>
-            <h1 className="font-bold text-[#4a403a] flex items-center gap-2">
-                <Leaf size={18} className="text-[#739072]" /> Polyglot
-            </h1>
+        <div className="md:hidden flex items-center p-4 bg-[#f3f1eb] border-b border-[#d1cdc2]">
+            <button onClick={() => setSidebarOpen(true)} className="p-2 mr-3 bg-white border border-[#d1cdc2] rounded-full text-[#739072] shadow-sm"><Menu size={24} /></button>
+            <h1 className="font-bold text-[#4a403a] tracking-tight flex items-center gap-2"><Leaf size={20} className="text-[#739072]" /> Polyglot</h1>
         </div>
-
-        {/* Content Area */}
         <main className="flex-1 overflow-y-auto">
+          {activeTab === 'press' && <WorldPress onArticleGenerated={handleArticleCreated} />}
           {activeTab === 'generate' && <Generator onArticleGenerated={handleArticleCreated} />}
           {activeTab === 'manual' && <ManualInput onArticleGenerated={handleArticleCreated} />}
-          {activeTab === 'library' && (
-              <LibraryView 
-                onSelect={handleArticleCreated} 
-              />
-          )}
+          {activeTab === 'library' && <LibraryView onSelect={handleArticleCreated} />}
         </main>
       </div>
     </div>
