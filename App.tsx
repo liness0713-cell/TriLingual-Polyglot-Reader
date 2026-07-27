@@ -51,7 +51,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpen, setI
           ))}
         </nav>
         <div className="p-6 border-t border-[#d1cdc2] text-center">
-            <a href="https://my-portfolio-beige-five-56.vercel.app/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center space-x-2 text-sm text-[#8c8279] hover:text-[#739072] transition-colors font-bold uppercase tracking-widest">
+            <a href="https://blog.gyuba-chan.com/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center space-x-2 text-sm text-[#8c8279] hover:text-[#739072] transition-colors font-bold uppercase tracking-widest">
               <span>千葉２狗 🐶</span>
             </a>
         </div>
